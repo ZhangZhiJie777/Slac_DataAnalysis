@@ -50,7 +50,7 @@ namespace Slac_DataAnalysis
         private bool TimerStatus = true;           // 定时器状态
         private bool thread10State;                // 线程状态
         private static bool isStartExec10 = false; // 是否开始执行线程        
-        private bool isAnalyzing = false;                  // 是否正在分析
+        private volatile bool isAnalyzing = false; // 是否正在分析
 
 
         private static string workdate = "";       // 工作日期
@@ -207,7 +207,7 @@ namespace Slac_DataAnalysis
                         string ssql = "	select from_device_id,device_id,qty_msg_id,type,bit_type,status_a_msg_id,status_a_bit_id,status_b_msg_id,status_b_bit_id from msglist_report where line_id='" + line_id + "'";
                         msglist_rpt = ConfigHelper.GetDataSet(Conn_battery, CommandType.Text, ssql);
                         DataTable dt_msglist = msglist_rpt.Tables[0];
-                        LogConfig.Intence.WriteLog("RunLog", "Stats", $"查询msglist_report表行数：{dt_msglist.Rows.Count}");
+                        LogConfig.Intence.WriteLog("RunLog", "Stats", $"开始统计分析，查询msglist_report表行数：{dt_msglist.Rows.Count}");
                         for (int m = 0; m < dt_msglist.Rows.Count; m++)
                         {
                             if (cts.Token.IsCancellationRequested) // 判断是否需要停止线程
@@ -222,7 +222,7 @@ namespace Slac_DataAnalysis
                             //统计产量 //getQtyFromCHbyMinute(line_id, "10", "10", "3009");
                             getQtyFromCHbyMinute(line_id, dr_msg["from_device_id"].ToString(), dr_msg["device_id"].ToString(), dr_msg["qty_msg_id"].ToString());
 
-                            LogConfig.Intence.WriteLog("RunLog", "Stats", $"设备号{device_id} 产量统计分析完成");
+                            LogConfig.Intence.WriteLog("RunLog", "Stats", $"统计分析{startTime}~{endTime}时间段内数据 设备号{device_id} 产量统计分析完成");
 
                             //计算停机信息  //getStopValueFromCH(line_id, "10", "10","201","25");
                             if (dr_msg["type"].ToString() == "a")
@@ -233,17 +233,17 @@ namespace Slac_DataAnalysis
                             {    //getStopValueFromCH(line_id, "12", "12","1250","0","1250","2");
                                 getStopValueFromCH_AB(line_id, dr_msg["from_device_id"].ToString(), dr_msg["device_id"].ToString(), dr_msg["status_a_msg_id"].ToString(), dr_msg["status_a_bit_id"].ToString(), dr_msg["status_b_msg_id"].ToString(), dr_msg["status_b_bit_id"].ToString());
                             }
-                            LogConfig.Intence.WriteLog("RunLog", "Stats", $"设备号{device_id} 计算停机信息完成");
+                            LogConfig.Intence.WriteLog("RunLog", "Stats", $"统计分析{startTime}~{endTime}时间段内数据 设备号{device_id} 计算停机信息完成");
 
                             //按小时统计停机   //getStopMinuteByHours(line_id, "20", "206.16");
                             getStopMinuteByHours(line_id, dr_msg["device_id"].ToString(), dr_msg["status_a_msg_id"].ToString() + "." + dr_msg["status_a_bit_id"].ToString());
 
-                            LogConfig.Intence.WriteLog("RunLog", "Stats", $"设备号{device_id} 按小时统计停机完成");
+                            LogConfig.Intence.WriteLog("RunLog", "Stats", $"统计分析{startTime}~{endTime}时间段内数据 设备号{device_id} 按小时统计停机完成");
 
                             // 统计班次报表   // getReportByShift(line_id, "10", "201.25", "3000", "0");  
                             getReportByShift(line_id, dr_msg["device_id"].ToString(), dr_msg["status_a_msg_id"].ToString() + "." + dr_msg["status_a_bit_id"].ToString(), dr_msg["qty_msg_id"].ToString(), "0");
 
-                            LogConfig.Intence.WriteLog("RunLog", "Stats", $"设备号{device_id} 统计班次报表完成");
+                            LogConfig.Intence.WriteLog("RunLog", "Stats", $"统计分析{startTime}~{endTime}时间段内数据 设备号{device_id} 统计班次报表完成");
 
 
                         }
@@ -367,15 +367,19 @@ namespace Slac_DataAnalysis
                                        */
                         #endregion
 
-                        AddListStr($"{workdate} & {workshift} ------ 统计分析处理完成 @ " + DateTime.Now.ToString());
-                        LogConfig.Intence.WriteLog("RunLog", "Stats", $"{workdate} & {workshift} ------ 统计分析处理完成 @ " + DateTime.Now.ToString());
+                        AddListStr($"{workdate} & {workshift} ------ 统计分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
+                        LogConfig.Intence.WriteLog("RunLog", "Stats", $"{workdate} & {workshift} ------ 统计分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
                         isAnalyzing = false;
                     }
                     catch (ThreadAbortException)
                     {
                         // 忽略中止线程异常（关闭时，直接中止线程会抛出 ThreadAbortException异常）
                     }
-                    catch (Exception ex) { System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + "_error10.log", ex.ToString() + DateTime.Now.ToString() + "\r\n"); }
+                    catch (Exception ex) 
+                    {
+                        isAnalyzing = false;
+                        System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + "_error10.log", ex.ToString() + DateTime.Now.ToString() + "\r\n"); 
+                    }
                 }
                 else
                 {

@@ -622,7 +622,7 @@ namespace Slac_DataAnalysis_Bit
                                             if (result == 1)
                                             {
                                                 DateTime.UtcNow.ToString();
-                                                AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString());
+                                                AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
                                                 LogConfig.Intence.WriteLog("RunLog", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
 
                                                 // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime
@@ -644,8 +644,8 @@ namespace Slac_DataAnalysis_Bit
                                 else
                                 {
                                     // 旧版本(查询一整个班次数据分析),结束后判断若不是当天，则继续查询分析下一个班次数据
-                                    AddListStr($"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString());
-                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString() + "\r\n");
+                                    AddListStr($"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
+                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
                                     // isAnalyzing = false;                            
 
                                     DateTime ds, de;
@@ -880,9 +880,17 @@ namespace Slac_DataAnalysis_Bit
                                     string lastKeyValue = client.Get<string>("k" + deviceID + "." + msgID + "." + xn.ToString());
 
                                     string[] lastStrBit = lastKeyValue.Split('@');
+
+                                    //string timeValue = lastStrBit[0].Substring(lastStrBit[0].Length - 8, 8);
+
                                     if (lastStrBit[0] != result.ToString())
                                     {
                                         client.Set("k" + deviceID + "." + msgID + "." + xn.ToString(), result.ToString() + "@" + strBit[0]);
+
+                                        //if (timeValue.Equals("00:00:00") || timeValue.Equals("00:30:00"))
+                                        //{
+
+                                        //}
 
                                         //System.IO.File.AppendAllText(DateTime.Now.ToString("yyyyMMdd_") + ".log", "k" + msgID + "." + x.ToString() + " ,last: " + lastStrBit[0] + ",lastTime=" + lastStrBit[1] + ",now: " + result.ToString() + ",NowTime=" + strBit[0] + "\n");
 
