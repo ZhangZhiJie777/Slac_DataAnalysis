@@ -251,8 +251,8 @@ namespace Slac_DataAnalysis.DatabaseSql.DBOper
         /// <summary>
         /// 更新表中 lastAnalyseTime 上次分析时间戳
         /// </summary>
-        /// <param name="param"></param>
-        public int UpdateLastAnalyseTime(string param)
+        /// <param name="paramValue"></param>
+        public int UpdateLastAnalyseTime(string paramValue,string paramName)
         {
             int result = 0;
             try
@@ -260,11 +260,11 @@ namespace Slac_DataAnalysis.DatabaseSql.DBOper
                 lock (lockObj2)
                 {
                     // 通过查询获取名称为lastAnalyseTime的第一条数据
-                    DBSystemConfig sysConfig = db.Queryable<DBSystemConfig>().Where(t => t.Name == "lastAnalyseTime").First();
+                    DBSystemConfig sysConfig = db.Queryable<DBSystemConfig>().Where(t => t.Name == paramName.Trim()).First();
                     if (sysConfig != null)
                     {
                         // 修改数据并进行更新
-                        sysConfig.Value = param;
+                        sysConfig.Value = paramValue;
                         result =  db.Updateable(sysConfig).ExecuteCommand();
                         return result;
                     }
@@ -272,7 +272,7 @@ namespace Slac_DataAnalysis.DatabaseSql.DBOper
             }
             catch (Exception ex)
             {
-                LogConfig.Intence.WriteLog("ErrLog", "Alarm", $"更新system_config表：上次分析时间戳错误（lastAnalyseTime）：{param} \r\n异常：{ex.StackTrace}\r\n");
+                LogConfig.Intence.WriteLog("ErrLog", "Alarm", $"更新system_config表：上次分析时间戳错误（lastAnalyseTime）：{paramValue} \r\n异常：{ex.StackTrace}\r\n");
                 return result;
 
             }

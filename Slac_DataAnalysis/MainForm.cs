@@ -2,6 +2,7 @@
 using Slac_DataAnalysis.Common;
 using Slac_DataAnalysis.DatabaseSql.DBModel;
 using Slac_DataAnalysis.DatabaseSql.DBOper;
+using Slac_DataAnalysis.FormPage;
 using Slac_DataAnalysis_Bit;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using System.IO;
 using System.Management;
 using System.Threading;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
 
 namespace Slac_DataAnalysis
 {
@@ -18,13 +20,15 @@ namespace Slac_DataAnalysis
     {
         private frm_main_yzyl_bit frm_Main_Yzyl_bit = null; // 报警分析
         private frm_main_yzyl frm_Main_Yzyl = null;         // 统计分析
+        private frm_main_yzyl_bit_alarm_btn frm_Main_Yzyl_Bit_Alarm_Btn = null; // 按钮报警分析
+
 
         private static string line_id = string.Empty; // 线体号
 
         //private TimedTask _timedTask;
 
         public MainForm()
-        {
+        {           
             InitializeComponent();
         }
 
@@ -61,7 +65,8 @@ namespace Slac_DataAnalysis
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void MainForm_Load(object sender, EventArgs e)
-        {
+        {            
+
             GetParamConfig(); // 获取参数配置
 
             this.notifyIcon1.Text = $"设备数据分析-{line_id}";
@@ -119,6 +124,8 @@ namespace Slac_DataAnalysis
                 Btn_Form1_Click_1(null, null);
 
                 Btn_Form2_Click_1(null, null);
+
+                Btn_Form3_Click(null, null);
             }
             catch (Exception ex)
             {
@@ -148,7 +155,7 @@ namespace Slac_DataAnalysis
         /// </summary>
         private void ChangePanel()
         {
-            double widthPanel = 0.8;
+            double widthPanel = 0.75;
             double heightPanel = 1;
 
             //计算panel1的新尺寸
@@ -159,23 +166,27 @@ namespace Slac_DataAnalysis
             panel1.Size = new Size(newWidth, newHeight);
 
             //设置panel1的新位置
-            panel1.Location = new Point((int)(this.ClientSize.Width * 0.2), 10);
+            panel1.Location = new Point((int)(this.ClientSize.Width * 0.25), 10);
 
             #region 设置左侧菜单尺寸（按比例自适应）
 
-            double widthPanelMenu = 0.2;
+            double widthPanelMenu = 0.25;
             double heightPanelMenu = 1 / 2;
 
             int newWidthMenu = (int)((this.ClientSize.Width) * widthPanelMenu) - 10;
-            int newHeightMenu = (int)((this.ClientSize.Height - 30) / 2);
+            int newHeightMenu = (int)((this.ClientSize.Height - 30) / 3);
 
-            panel2.Size = new Size(newWidthMenu, (this.ClientSize.Height - 30) / 2);
+            panel2.Size = new Size(newWidthMenu, (this.ClientSize.Height - 30) / 3);
             panel2.Location = new Point(5, 10);
 
             panel3.Size = new Size(newWidthMenu, newHeightMenu);
-            panel3.Location = new Point(5, panel2.Location.Y + newHeightMenu + 10);
+            panel3.Location = new Point(5, panel2.Location.Y + newHeightMenu + 5);
             //panel4.Size = new Size(newWidthMenu, newHeightMenu);
             //panel4.Location = new Point(5, panel3.Location.Y + newHeightMenu + 5);
+
+            panel6.Size = new Size(newWidthMenu, newHeightMenu);
+            panel6.Location = new Point(5, panel3.Location.Y + newHeightMenu + 5);
+
 
             panel4.Width = panel2.Width;
             panel4.Height = (int)(panel2.Height * 0.8);
@@ -183,6 +194,8 @@ namespace Slac_DataAnalysis
             panel5.Width = panel3.Width;
             panel5.Height = (int)(panel3.Height * 0.8);
 
+            panel7.Width = panel6.Width;
+            panel7.Height = (int)(panel6.Height * 0.8);
             #endregion 设置左侧菜单尺寸（按比例自适应）
         }
 
@@ -221,100 +234,7 @@ namespace Slac_DataAnalysis
                 frm_Main_Yzyl_bit.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
                 frm_Main_Yzyl_bit.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
             }
-        }
-
-        /// <summary>
-        /// 获取界面设置信息
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        private object FetchMainFormSettingsInfo(string type)
-        {
-            object obj = new object();
-            try
-            {
-                if (!this.IsDisposed && this.IsHandleCreated)
-                {
-                    this.Invoke(new Action(() =>
-                    {
-                        switch (type)
-                        {
-                            case "报警分析时间":
-                                obj = dateTimePicker_Alarm.Value;
-                                obj = (DateTime)obj;
-                                break;
-
-                            case "报警分析班次":
-                                obj = comboBox_Alarm.Text;
-                                obj = obj.ToString();
-                                break;
-
-                            case "统计分析时间":
-                                obj = dateTimePicker_Stats.Value;
-                                obj = (DateTime)obj;
-                                break;
-
-                            case "统计分析班次":
-                                obj = comboBox_Stats.Text;
-                                obj = obj.ToString();
-                                break;
-
-                            default:
-                                obj = null;
-                                break;
-                        }
-                    }));
-                }
-                else { obj = null; }
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-            return obj;
-        }
-
-        /// <summary>
-        /// 更新界面时间选择器显示时间
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="dateTime"></param>
-        private void UpdateDateTimePicker(string type, object obj)
-        {
-            try
-            {
-                if (!this.IsDisposed && this.IsHandleCreated)
-                {
-                    this.BeginInvoke(new Action(() =>
-                    {
-                        switch (type)
-                        {
-                            case "报警分析时间":
-                                dateTimePicker_Alarm.Value = Convert.ToDateTime(obj);
-                                break;
-
-                            case "报警分析班次":
-                                comboBox_Alarm.Text = obj.ToString();
-                                break;
-
-                            case "统计分析时间":
-                                dateTimePicker_Stats.Value = Convert.ToDateTime(obj);
-                                break;
-
-                            case "统计分析班次":
-                                comboBox_Stats.Text = obj.ToString();
-                                break;
-
-                            default:
-                                break;
-                        }
-                    }));
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
+        }        
 
         /// <summary>
         /// 切换页面：线体分析信息
@@ -341,6 +261,33 @@ namespace Slac_DataAnalysis
 
                 frm_Main_Yzyl.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
                 frm_Main_Yzyl.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
+            }
+        }
+
+        /// <summary>
+        /// 切换页面：按钮报警分析
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Btn_Form3_Click(object sender, EventArgs e)
+        {
+            if (frm_Main_Yzyl_Bit_Alarm_Btn != null)
+            {
+                frm_Main_Yzyl_Bit_Alarm_Btn.Show();
+                panel1.Controls.Clear();
+                panel1.Controls.Add(frm_Main_Yzyl_Bit_Alarm_Btn);
+            }
+            else
+            {
+                frm_Main_Yzyl_Bit_Alarm_Btn = new frm_main_yzyl_bit_alarm_btn();
+                frm_Main_Yzyl_Bit_Alarm_Btn.Show();
+                panel1.Controls.Clear();
+                panel1.Controls.Add(frm_Main_Yzyl_Bit_Alarm_Btn);
+                Btn_Form3.BackColor = Color.Green;
+                panel7.Enabled = true;
+
+                frm_Main_Yzyl_Bit_Alarm_Btn.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
+                frm_Main_Yzyl_Bit_Alarm_Btn.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
             }
         }
 
@@ -433,6 +380,162 @@ namespace Slac_DataAnalysis
                         Console.WriteLine();
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// 关闭按钮报警分析信息页面
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Btn_Form3Stop_Click(object sender, EventArgs e)
+        {
+            if (frm_Main_Yzyl_Bit_Alarm_Btn != null)
+            {
+                bool result = false;
+                this.Invoke(new Action(() =>
+                {
+                    if (MessageBox.Show(this, "确定要关闭按钮报警分析吗？", "提示", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                    {
+                        result = true;
+                    }
+                }));
+
+                if (result)
+                {
+                    try
+                    {
+                        // 禁用按钮，防止多次点击
+                        Btn_Form3Stop.Enabled = false;
+
+                        this.BeginInvoke(new Action(async () =>
+                        {
+                            await frm_Main_Yzyl_Bit_Alarm_Btn.StopService(); // 关闭服务（关闭定时器，解析线程）
+                            //frm_Main_Yzyl_Bit_Alarm_Btn.Close();
+                            frm_Main_Yzyl_Bit_Alarm_Btn.Dispose();
+                            frm_Main_Yzyl_Bit_Alarm_Btn = null;
+                            Btn_Form3.BackColor = Color.White;
+                            Btn_Form3Stop.Enabled = true;
+
+                            panel7.Enabled = false;
+                        }));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 获取界面设置信息
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private object FetchMainFormSettingsInfo(string type)
+        {
+            object obj = new object();
+            try
+            {
+                if (!this.IsDisposed && this.IsHandleCreated)
+                {
+                    this.Invoke(new Action(() =>
+                    {
+                        switch (type)
+                        {
+                            case "报警分析时间":
+                                obj = dateTimePicker_Alarm.Value;
+                                obj = (DateTime)obj;
+                                break;
+
+                            case "报警分析班次":
+                                obj = comboBox_Alarm.Text;
+                                obj = obj.ToString();
+                                break;
+
+                            case "统计分析时间":
+                                obj = dateTimePicker_Stats.Value;
+                                obj = (DateTime)obj;
+                                break;
+
+                            case "统计分析班次":
+                                obj = comboBox_Stats.Text;
+                                obj = obj.ToString();
+                                break;
+
+                            case "按钮报警分析时间":
+                                obj = dateTimePicker_BtnAlarm.Value;
+                                obj = (DateTime)obj;
+                                break;
+
+                            case "按钮报警分析班次":
+                                obj = comboBox_BtnAlarm.Text;
+                                obj = obj.ToString();
+                                break;
+
+                            default:
+                                obj = null;
+                                break;
+                        }
+                    }));
+                }
+                else { obj = null; }
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            return obj;
+        }
+
+        /// <summary>
+        /// 更新界面时间选择器显示时间
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="dateTime"></param>
+        private void UpdateDateTimePicker(string type, object obj)
+        {
+            try
+            {
+                if (!this.IsDisposed && this.IsHandleCreated)
+                {
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        switch (type)
+                        {
+                            case "报警分析时间":
+                                dateTimePicker_Alarm.Value = Convert.ToDateTime(obj);
+                                break;
+
+                            case "报警分析班次":
+                                comboBox_Alarm.Text = obj.ToString();
+                                break;
+
+                            case "统计分析时间":
+                                dateTimePicker_Stats.Value = Convert.ToDateTime(obj);
+                                break;
+
+                            case "统计分析班次":
+                                comboBox_Stats.Text = obj.ToString();
+                                break;
+
+                            case "按钮报警分析时间":
+                                dateTimePicker_BtnAlarm.Value = Convert.ToDateTime(obj);
+                                break;
+
+                            case "按钮报警分析班次":
+                                comboBox_BtnAlarm.Text = obj.ToString();
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }));
+                }
+            }
+            catch (Exception)
+            {
             }
         }
 
@@ -612,6 +715,19 @@ namespace Slac_DataAnalysis
             if (frm_Main_Yzyl != null)
             {
                 frm_Main_Yzyl.button2_Click(null, null); // 开启统计分析
+            }
+        }
+
+        /// <summary>
+        /// 按钮报警分析
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_BtnAlarm_Click(object sender, EventArgs e)
+        {
+            if (frm_Main_Yzyl_Bit_Alarm_Btn != null)
+            {
+                frm_Main_Yzyl_Bit_Alarm_Btn.button2_Click(null, null); // 开启按钮报警分析
             }
         }
     }
