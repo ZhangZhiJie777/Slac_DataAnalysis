@@ -22,13 +22,17 @@ namespace Slac_DataAnalysis
         private frm_main_yzyl frm_Main_Yzyl = null;         // 统计分析
         private frm_main_yzyl_bit_alarm_btn frm_Main_Yzyl_Bit_Alarm_Btn = null; // 按钮报警分析
 
-
+        public volatile static string alarm_Model = string.Empty;     // 报警模式
+        public volatile static string alarm_Btn_Model = string.Empty; // 按钮报警模式
         private static string line_id = string.Empty; // 线体号
+
+        private volatile string lastAnalyseTime;           // 上一个时间段分析开始时间
+        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮报警）
 
         //private TimedTask _timedTask;
 
         public MainForm()
-        {           
+        {
             InitializeComponent();
         }
 
@@ -50,6 +54,12 @@ namespace Slac_DataAnalysis
                 // 线体号
                 line_id = list.Find(e => e.Name.Trim() == "LineID").Value.Trim();
 
+                //上一次报警分析时间
+                lastAnalyseTime = list.Find(e => e.Name.Trim() == "lastAnalyseTime").Value.Trim();
+
+                // 上一次按钮报警分析时间
+                lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
+
             }
             catch (Exception ex)
             {
@@ -65,7 +75,7 @@ namespace Slac_DataAnalysis
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void MainForm_Load(object sender, EventArgs e)
-        {            
+        {
 
             GetParamConfig(); // 获取参数配置
 
@@ -187,15 +197,16 @@ namespace Slac_DataAnalysis
             panel6.Size = new Size(newWidthMenu, newHeightMenu);
             panel6.Location = new Point(5, panel3.Location.Y + newHeightMenu + 5);
 
-
-            panel4.Width = panel2.Width;
-            panel4.Height = (int)(panel2.Height * 0.8);
+            groupBox_Alarm.Width=panel2.Width - 10;
+            groupBox_Alarm.Height = panel2.Height - 10;
 
             panel5.Width = panel3.Width;
             panel5.Height = (int)(panel3.Height * 0.8);
 
-            panel7.Width = panel6.Width;
-            panel7.Height = (int)(panel6.Height * 0.8);
+
+            groupBox_Alarm_Btn.Width = panel6.Width - 10;
+            groupBox_Alarm_Btn.Height = panel6.Height - 10;
+            
             #endregion 设置左侧菜单尺寸（按比例自适应）
         }
 
@@ -224,17 +235,48 @@ namespace Slac_DataAnalysis
             }
             else
             {
+                #region 模式确认
+                if (radioButton_Alarm_Sub.Checked)
+                {
+                    alarm_Model = "分段模式";
+                }
+                else { alarm_Model = "整班次模式"; }
+
+                GetParamConfig();
+                DateTime dt;
+                if (!DateTime.TryParse(lastAnalyseTime, out dt))
+                {
+                    radioButton_Alarm_Sub.Checked = false;
+                    radioButton_Alarm_Shift.Checked = true;
+                }
+
+                if (radioButton_Alarm_Shift.Checked)
+                {
+                    radioButton_Alarm_Sub.Enabled = false;
+                    dateTimePicker_Alarm.Enabled = true;
+                    comboBox_Alarm.Enabled = true;
+                    btn_Alarm.Enabled = true;
+                }
+                else
+                {
+                    radioButton_Alarm_Shift.Enabled = false;
+                    dateTimePicker_Alarm.Enabled = false;
+                    comboBox_Alarm.Enabled = false;
+                    btn_Alarm.Enabled = false;
+                }
+
+                #endregion
+
                 frm_Main_Yzyl_bit = new frm_main_yzyl_bit();
                 frm_Main_Yzyl_bit.Show();
                 panel1.Controls.Clear();
                 panel1.Controls.Add(frm_Main_Yzyl_bit);
-                Btn_Form1.BackColor = Color.Green;
-                panel4.Enabled = true;
+                Btn_Form1.BackColor = Color.Green;                
 
                 frm_Main_Yzyl_bit.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
                 frm_Main_Yzyl_bit.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
             }
-        }        
+        }
 
         /// <summary>
         /// 切换页面：线体分析信息
@@ -279,12 +321,44 @@ namespace Slac_DataAnalysis
             }
             else
             {
+                #region 模式确认
+                if (radioButton_Alarm_Btn_Sub.Checked)
+                {
+                    alarm_Btn_Model = "分段模式";
+                }
+                else { alarm_Btn_Model = "整班次模式"; }
+
+                GetParamConfig();
+                DateTime dt;
+                if (!DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                {
+                    radioButton_Alarm_Btn_Sub.Checked = false;
+                    radioButton_Alarm_Btn_Shift.Checked = true;
+                }
+
+                if (radioButton_Alarm_Btn_Shift.Checked)
+                {
+                    radioButton_Alarm_Btn_Sub.Enabled = false;
+                    dateTimePicker_Alarm_Btn.Enabled = true;
+                    comboBox_Alarm_Btn.Enabled = true;
+                    btn_Alarm_Btn.Enabled = true;
+                }
+                else
+                {
+                    radioButton_Alarm_Btn_Shift.Enabled = false;
+                    dateTimePicker_Alarm_Btn.Enabled = false;
+                    comboBox_Alarm_Btn.Enabled = false;
+                    btn_Alarm_Btn.Enabled = false;
+                }
+
+                
+                #endregion
+
                 frm_Main_Yzyl_Bit_Alarm_Btn = new frm_main_yzyl_bit_alarm_btn();
                 frm_Main_Yzyl_Bit_Alarm_Btn.Show();
                 panel1.Controls.Clear();
                 panel1.Controls.Add(frm_Main_Yzyl_Bit_Alarm_Btn);
                 Btn_Form3.BackColor = Color.Green;
-                panel7.Enabled = true;
 
                 frm_Main_Yzyl_Bit_Alarm_Btn.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
                 frm_Main_Yzyl_Bit_Alarm_Btn.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
@@ -324,8 +398,13 @@ namespace Slac_DataAnalysis
                             frm_Main_Yzyl_bit = null;
                             Btn_Form1.BackColor = Color.White;
                             Btn_Form1Stop.Enabled = true;
+                            
+                            dateTimePicker_Alarm.Enabled = false;
+                            comboBox_Alarm.Enabled = false;
+                            btn_Alarm.Enabled = false;
 
-                            panel4.Enabled = false;
+                            radioButton_Alarm_Shift.Enabled = true;
+                            radioButton_Alarm_Sub.Enabled = true;
                         }));
                     }
                     catch (Exception ex)
@@ -417,7 +496,12 @@ namespace Slac_DataAnalysis
                             Btn_Form3.BackColor = Color.White;
                             Btn_Form3Stop.Enabled = true;
 
-                            panel7.Enabled = false;
+                            dateTimePicker_Alarm_Btn.Enabled = false;
+                            comboBox_Alarm_Btn.Enabled = false;
+                            btn_Alarm_Btn.Enabled = false;
+
+                            radioButton_Alarm_Btn_Shift.Enabled = true;
+                            radioButton_Alarm_Btn_Sub.Enabled = true;
                         }));
                     }
                     catch (Exception ex)
@@ -465,12 +549,12 @@ namespace Slac_DataAnalysis
                                 break;
 
                             case "按钮报警分析时间":
-                                obj = dateTimePicker_BtnAlarm.Value;
+                                obj = dateTimePicker_Alarm_Btn.Value;
                                 obj = (DateTime)obj;
                                 break;
 
                             case "按钮报警分析班次":
-                                obj = comboBox_BtnAlarm.Text;
+                                obj = comboBox_Alarm_Btn.Text;
                                 obj = obj.ToString();
                                 break;
 
@@ -521,11 +605,11 @@ namespace Slac_DataAnalysis
                                 break;
 
                             case "按钮报警分析时间":
-                                dateTimePicker_BtnAlarm.Value = Convert.ToDateTime(obj);
+                                dateTimePicker_Alarm_Btn.Value = Convert.ToDateTime(obj);
                                 break;
 
                             case "按钮报警分析班次":
-                                comboBox_BtnAlarm.Text = obj.ToString();
+                                comboBox_Alarm_Btn.Text = obj.ToString();
                                 break;
 
                             default:
@@ -728,6 +812,55 @@ namespace Slac_DataAnalysis
             if (frm_Main_Yzyl_Bit_Alarm_Btn != null)
             {
                 frm_Main_Yzyl_Bit_Alarm_Btn.button2_Click(null, null); // 开启按钮报警分析
+            }
+        }
+        
+        /// <summary>
+        /// 按钮报警分析模式选择——分段模式
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void radioButton_Alarm_Btn_Sub_CheckedChanged(object sender, EventArgs e)
+        {
+            // 选择分段模式，需要判断数据库该配置字段数据是否是正确的时间数据
+            if (radioButton_Alarm_Btn_Sub.Checked)
+            {
+                GetParamConfig();
+                DateTime dt;
+                if (!DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                {
+                    radioButton_Alarm_Btn_Sub.Checked = false;
+                    radioButton_Alarm_Btn_Shift.Checked = true;
+                    MessageBox.Show(this,"按钮报警分析：无法选择分析模式，请正确配置数据库上一次分析时间戳", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+
+            //if (radioButton_Alarm_Btn_Sub.Checked)
+            //{
+            //    alarm_Btn_Model = "分段模式";
+            //}
+            //else { alarm_Btn_Model = "整班次模式"; }
+
+        }
+
+        /// <summary>
+        /// 按钮报警分析模式选择——分段模式
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void radioButton_Alarm_Sub_CheckedChanged(object sender, EventArgs e)
+        {
+            // 选择分段模式，需要判断数据库该配置字段数据是否是正确的时间数据
+            if (radioButton_Alarm_Sub.Checked)
+            {
+                GetParamConfig();
+                DateTime dt;
+                if (!DateTime.TryParse(lastAnalyseTime, out dt))
+                {
+                    radioButton_Alarm_Sub.Checked = false;
+                    radioButton_Alarm_Shift.Checked = true;
+                    MessageBox.Show(this, "报警分析：无法选择分析模式，请正确配置数据库上一次分析时间戳", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
         }
     }

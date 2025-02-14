@@ -165,6 +165,17 @@ namespace Slac_DataAnalysis_Bit
                         }
                     }
                 }
+
+                // 判断界面选择，整班次模式还是分段模式
+                if (string.IsNullOrEmpty(MainForm.alarm_Model) || MainForm.alarm_Model == "整班次模式")
+                {
+                    lastAnalyseTime = "0";
+                    isNewVersion = false;
+                }
+                else
+                {
+                    isNewVersion = true;
+                }
             }
             catch (Exception ex)
             {
@@ -379,23 +390,53 @@ namespace Slac_DataAnalysis_Bit
                         if (isNewVersion && !isAnalyzing)
                         {
                             // 查询数据库最新报警信息的时间（eventtime）
-                            string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 1 ";
+                            string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 50 ";
                             string newEventtime = PostResponse(httpClientTimer, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
+
+                            List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
 
                             DateTime newDbTime;// click house 数据库最新报警信息的时间
                             DateTime lastTime; // 上一次分析时间戳时间
 
-                            if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime, out lastTime))
+                            bool isStartExecl = false;
+
+                            if (Eventtime.Count == 50)
                             {
-                                if (lastTime.AddMinutes(30) < newDbTime)
+                                // 遍历最新的五十条报警数据，如果存在一条报警时间小于上次分析时间+30分钟，则不执行分析
+                                foreach (var item in Eventtime)
                                 {
-
-                                    //button2_Click(sender, e);
-                                    getTodayAndShift();
-                                    isStartExec10 = true;
-
+                                    if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime, out lastTime))
+                                    {
+                                        if (lastTime.AddMinutes(30) > newDbTime)
+                                        {
+                                            isStartExecl = false;
+                                            break;
+                                        }
+                                        else { isStartExecl = true; }
+                                    }
                                 }
                             }
+
+                            if (isStartExecl)
+                            {
+                                //button2_Click(sender, e);
+                                getTodayAndShift();
+                                isStartExec10 = true;
+                            }
+
+                            Eventtime.Clear();
+
+                            //if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime, out lastTime))
+                            //{
+                            //    if (lastTime.AddMinutes(30) < newDbTime)
+                            //    {
+
+                            //        //button2_Click(sender, e);
+                            //        getTodayAndShift();
+                            //        isStartExec10 = true;
+
+                            //    }
+                            //}
                         }
                     }
                 }
@@ -614,7 +655,7 @@ namespace Slac_DataAnalysis_Bit
                                 if (isNewVersion)
                                 {
                                     // 查询数据库最新报警信息的时间（eventtime）
-                                    string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 1 ";
+                                    string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 50 ";
 
                                     string newEventtime = string.Empty;
 
@@ -623,38 +664,87 @@ namespace Slac_DataAnalysis_Bit
                                         newEventtime = PostResponse(httpClient, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
                                     }
 
+                                    List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
+
                                     DateTime newDbTime; // click house 数据库最新报警信息的时间
                                     DateTime lastTime;  // 上一次分析时间戳时间
 
-                                    if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime, out lastTime))
+                                    // 判断是否需要更新上次分析时间戳，继续下一个时间段分析
+                                    bool isContinueNext = false;
+                                    if (Eventtime.Count == 50)
                                     {
-                                        // 判断是否需要更新上次分析时间戳
-                                        if (lastTime.AddMinutes(30) < newDbTime)
+                                        foreach (var item in Eventtime)
                                         {
-                                            // 一次分析完成，更新上次分析时间戳（加半小时）
-                                            string newLastAnalyseTime = endTime;
-                                            DBOper.Init();
-                                            DBOper db = new DBOper();
-                                            int result = db.UpdateLastAnalyseTime(newLastAnalyseTime, "lastAnalyseTime");
-                                            if (result == 1)
+                                            if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime, out lastTime))
                                             {
-                                                DateTime.UtcNow.ToString();
-                                                AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
-                                                LogConfig.Intence.WriteLog("RunLog", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
-
-                                                // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime
-                                                DBSystemConfig dbSystemConfig = new DBSystemConfig();
-                                                List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime'");
-                                                lastAnalyseTime = list[0].Value;
+                                                if (lastTime.AddMinutes(30) > newDbTime)
+                                                {
+                                                    isContinueNext = false;
+                                                    break;
+                                                }
+                                                else { isContinueNext = true; }
                                             }
-                                            else
-                                            {
-                                                LogConfig.Intence.WriteLog("ErrLog", "Alarm", $"更新上次分析时间戳失败：{newLastAnalyseTime}\r\n");
-                                                AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
-                                            }
-
                                         }
                                     }
+
+                                    if (isContinueNext)
+                                    {
+                                        // 一次分析完成，更新上次分析时间戳（加半小时）
+                                        string newLastAnalyseTime = endTime;
+                                        DBOper.Init();
+                                        DBOper db = new DBOper();
+                                        int result = db.UpdateLastAnalyseTime(newLastAnalyseTime, "lastAnalyseTime");
+                                        if (result == 1)
+                                        {
+                                            DateTime.UtcNow.ToString();
+                                            AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
+                                            LogConfig.Intence.WriteLog("RunLog", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
+
+                                            // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime
+                                            DBSystemConfig dbSystemConfig = new DBSystemConfig();
+                                            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime'");
+                                            lastAnalyseTime = list[0].Value;
+                                        }
+                                        else
+                                        {
+                                            LogConfig.Intence.WriteLog("ErrLog", "Alarm", $"更新上次分析时间戳失败：{newLastAnalyseTime}\r\n");
+                                            AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
+                                        }
+                                    }
+
+                                    #region 注释
+                                    //if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime, out lastTime))
+                                    //{
+                                    //    // 判断是否需要更新上次分析时间戳
+                                    //    if (lastTime.AddMinutes(30) < newDbTime)
+                                    //    {
+                                    //        // 一次分析完成，更新上次分析时间戳（加半小时）
+                                    //        string newLastAnalyseTime = endTime;
+                                    //        DBOper.Init();
+                                    //        DBOper db = new DBOper();
+                                    //        int result = db.UpdateLastAnalyseTime(newLastAnalyseTime, "lastAnalyseTime");
+                                    //        if (result == 1)
+                                    //        {
+                                    //            DateTime.UtcNow.ToString();
+                                    //            AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
+                                    //            LogConfig.Intence.WriteLog("RunLog", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
+
+                                    //            // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime
+                                    //            DBSystemConfig dbSystemConfig = new DBSystemConfig();
+                                    //            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime'");
+                                    //            lastAnalyseTime = list[0].Value;
+                                    //        }
+                                    //        else
+                                    //        {
+                                    //            LogConfig.Intence.WriteLog("ErrLog", "Alarm", $"更新上次分析时间戳失败：{newLastAnalyseTime}\r\n");
+                                    //            AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
+                                    //        }
+
+                                    //    }
+                                    //} 
+
+                                    #endregion
+
                                     isStartExec10 = false;
                                     isAnalyzing = false;
                                 }

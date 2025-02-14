@@ -139,15 +139,12 @@ namespace Slac_DataAnalysis.FormPage
                 // Radis配置
                 RedisServer = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[0];
                 RedisPort = Convert.ToInt32(list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[1]);
-                RedisPasswd = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[2];
-
-                //上一次报警分析时间
-                // lastAnalyseTime = list.Find(e => e.Name.Trim() == "lastAnalyseTime").Value.Trim();               
+                RedisPasswd = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[2];                              
 
                 // 上一次按钮报警分析时间
                 lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
 
-                // 分段模式下，初始化为班次起始时间
+                // 分段模式下，初始化为班次开始时间
                 if (!string.IsNullOrEmpty(lastAnalyseTime_Alarm_Btn) && lastAnalyseTime_Alarm_Btn.Length == 19)
                 {
                     DateTime dt;
@@ -162,6 +159,17 @@ namespace Slac_DataAnalysis.FormPage
                             lastAnalyseTime_Alarm_Btn = lastAnalyseTime_Alarm_Btn.Substring(0, 11) + "12:00:00";
                         }
                     }
+                }
+
+                // 判断界面选择，整班次模式还是分段模式
+                if (string.IsNullOrEmpty(MainForm.alarm_Btn_Model) || MainForm.alarm_Btn_Model == "整班次模式")
+                {
+                    lastAnalyseTime_Alarm_Btn = "0";
+                    isNewVersion = false;
+                }
+                else
+                {
+                    isNewVersion = true;
                 }
             }
             catch (Exception ex)
@@ -188,7 +196,6 @@ namespace Slac_DataAnalysis.FormPage
                 httpClient32 = new HttpClient();
                 httpClientTimer = new HttpClient();
 
-                timer1.Enabled = true; // 定时器启动
 
                 this.Text = this.Text + "_" + line_id;
 
@@ -204,6 +211,8 @@ namespace Slac_DataAnalysis.FormPage
                 thread10 = new Thread(threadStart10);
                 thread10.IsBackground = true;
                 thread10.Start();
+
+                timer1.Enabled = true; // 定时器启动
             }
             catch (Exception)
             {
@@ -377,23 +386,53 @@ namespace Slac_DataAnalysis.FormPage
                         if (isNewVersion && !isAnalyzing)
                         {
                             // 查询数据库最新报警信息的时间（eventtime）
-                            string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 1 ";
+                            string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 50 ";
                             string newEventtime = PostResponse(httpClientTimer, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
+
+                            List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
 
                             DateTime newDbTime;// click house 数据库最新报警信息的时间
                             DateTime lastTime; // 上一次分析时间戳时间
 
-                            if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                            bool isStartExecl = false;
+
+                            if (Eventtime.Count == 50)
                             {
-                                if (lastTime.AddMinutes(30) < newDbTime)
+                                // 遍历最新的五十条报警数据，如果存在一条报警时间小于上次分析时间+30分钟，则不执行分析
+                                foreach (var item in Eventtime)
                                 {
-
-                                    //button2_Click(sender, e);
-                                    getTodayAndShift();
-                                    isStartExec10 = true;
-
+                                    if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                    {
+                                        if (lastTime.AddMinutes(30) > newDbTime)
+                                        {
+                                            isStartExecl = false;
+                                            break;
+                                        }
+                                        else { isStartExecl = true; }
+                                    }
                                 }
                             }
+
+                            if (isStartExecl)
+                            {
+                                //button2_Click(sender, e);
+                                getTodayAndShift();
+                                isStartExec10 = true;
+                            }
+
+                            Eventtime.Clear();
+
+                            //if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                            //{
+                            //    if (lastTime.AddMinutes(30) < newDbTime)
+                            //    {
+
+                            //        //button2_Click(sender, e);
+                            //        getTodayAndShift();
+                            //        isStartExec10 = true;
+
+                            //    }
+                            //}
                         }
                     }
                 }
@@ -430,8 +469,14 @@ namespace Slac_DataAnalysis.FormPage
                             {
                                 // chizhoujz.line_id + CHtable_name
                                 // 去重查询一个班次的 device_id,msg_id 组合，且 50< msg_id <150，设备号为 16位设备
-                                string ssql_12 = "select distinct device_id,msg_id FROM " + companyNum + "." + line_id + CHtable_name + " WHERE eventtime >='" + startTime
-                                      + "' and eventtime<'" + endTime + "' and device_id in(" + device_16bit + ") and ((msg_id >0 and msg_id <50) or (msg_id >=150 and msg_id <170)) order by device_id,msg_id ";
+
+                                //string ssql_12 = "select distinct device_id,msg_id FROM " + companyNum + "." + line_id + CHtable_name + " WHERE eventtime >='" + startTime
+                                //      + "' and eventtime<'" + endTime + "' and device_id in(" + device_16bit + ") and ((msg_id >0 and msg_id <16) or (msg_id >=150 and msg_id <180)) order by device_id,msg_id ";
+
+                                string ssql_12 = $"select distinct device_id,msg_id FROM {companyNum}.{line_id}{CHtable_name} " +
+                                                    $"WHERE eventtime >='{startTime}' and eventtime<'{endTime}' " +
+                                                    $"and device_id in({device_16bit}) and msg_id >=150 and msg_id <180 " +
+                                                    $"order by device_id,msg_id ";
 
                                 string msgIDlist = string.Empty;
 
@@ -484,8 +529,14 @@ namespace Slac_DataAnalysis.FormPage
                             try
                             {
                                 // 去重查询一个班次的 device_id,msg_id 组合，且 50< msg_id <100，设备号为 32位设备
-                                string ssql_other = "select distinct device_id,msg_id FROM " + companyNum + "." + line_id + CHtable_name + " WHERE eventtime >='" + startTime
-                                                         + "' and eventtime<'" + endTime + "'  and device_id not in(" + device_16bit + ") and ((msg_id >0 and msg_id <50) or (msg_id >=150 and msg_id <170)) order by device_id,msg_id ";
+
+                                //string ssql_other = "select distinct device_id,msg_id FROM " + companyNum + "." + line_id + CHtable_name + " WHERE eventtime >='" + startTime
+                                //                         + "' and eventtime<'" + endTime + "'  and device_id not in(" + device_16bit + ") and ((msg_id >0 and msg_id <16) or (msg_id >=150 and msg_id <180)) order by device_id,msg_id ";
+
+                                string ssql_other = $"select distinct device_id,msg_id FROM {companyNum}.{line_id}{CHtable_name} " +
+                                                    $"WHERE eventtime >='{startTime}' and eventtime<'{endTime}' " +
+                                                    $"and device_id not in({device_16bit}) and msg_id >=150 and msg_id <180 " +
+                                                    $"order by device_id,msg_id ";
 
                                 string msgIDlist_other = string.Empty;
 
@@ -611,8 +662,8 @@ namespace Slac_DataAnalysis.FormPage
                             {
                                 if (isNewVersion)
                                 {
-                                    // 查询数据库最新报警信息的时间（eventtime）
-                                    string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 1 ";
+                                    // 查询数据库最新报警信息的时间（eventtime字段）
+                                    string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 50 ";
 
                                     string newEventtime = string.Empty;
 
@@ -621,38 +672,86 @@ namespace Slac_DataAnalysis.FormPage
                                         newEventtime = PostResponse(httpClient, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
                                     }
 
+                                    List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
+
                                     DateTime newDbTime; // click house 数据库最新报警信息的时间
                                     DateTime lastTime;  // 上一次分析时间戳时间
 
-                                    if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                    // 判断是否需要更新上次分析时间戳，继续下一个时间段分析
+                                    bool isContinueNext = false;
+                                    if (Eventtime.Count == 50)
                                     {
-                                        // 判断是否需要更新上次分析时间戳
-                                        if (lastTime.AddMinutes(30) < newDbTime)
+                                        foreach (var item in Eventtime)
                                         {
-                                            // 一次分析完成，更新上次分析时间戳（加半小时）
-                                            string newlastAnalyseTime_Alarm_Btn = endTime;
-                                            DBOper.Init();
-                                            DBOper db = new DBOper();
-                                            int result = db.UpdateLastAnalyseTime(newlastAnalyseTime_Alarm_Btn, "lastAnalyseTime_Alarm_Btn");
-                                            if (result == 1)
+                                            if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
                                             {
-                                                DateTime.UtcNow.ToString();
-                                                AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
-                                                LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳成功：{newlastAnalyseTime_Alarm_Btn}\r\n");
-
-                                                // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime_Alarm_Btn
-                                                DBSystemConfig dbSystemConfig = new DBSystemConfig();
-                                                List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime_Alarm_Btn'");
-                                                lastAnalyseTime_Alarm_Btn = list[0].Value;
+                                                if (lastTime.AddMinutes(30) > newDbTime)
+                                                {
+                                                    isContinueNext = false;
+                                                    break;
+                                                }
+                                                else { isContinueNext = true; }
                                             }
-                                            else
-                                            {
-                                                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳失败：{newlastAnalyseTime_Alarm_Btn}\r\n");
-                                                AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
-                                            }
-
                                         }
                                     }
+                                    
+                                    if (isContinueNext)
+                                    {
+                                        // 一次分析完成，更新上次分析时间戳（加半小时）
+                                        string newlastAnalyseTime_Alarm_Btn = endTime;
+                                        DBOper.Init();
+                                        DBOper db = new DBOper();
+                                        int result = db.UpdateLastAnalyseTime(newlastAnalyseTime_Alarm_Btn, "lastAnalyseTime_Alarm_Btn");
+                                        if (result == 1)
+                                        {
+                                            DateTime.UtcNow.ToString();
+                                            AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
+                                            LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳成功：{newlastAnalyseTime_Alarm_Btn}\r\n");
+
+                                            // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime_Alarm_Btn
+                                            DBSystemConfig dbSystemConfig = new DBSystemConfig();
+                                            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime_Alarm_Btn'");
+                                            lastAnalyseTime_Alarm_Btn = list[0].Value;
+                                        }
+                                        else
+                                        {
+                                            LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳失败：{newlastAnalyseTime_Alarm_Btn}\r\n");
+                                            AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
+                                        }
+                                    }
+
+                                    #region 注释
+                                    //if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                    //{
+                                    //    // 判断是否需要更新上次分析时间戳
+                                    //    if (lastTime.AddMinutes(30) < newDbTime)
+                                    //    {
+                                    //        // 一次分析完成，更新上次分析时间戳（加半小时）
+                                    //        string newlastAnalyseTime_Alarm_Btn = endTime;
+                                    //        DBOper.Init();
+                                    //        DBOper db = new DBOper();
+                                    //        int result = db.UpdateLastAnalyseTime(newlastAnalyseTime_Alarm_Btn, "lastAnalyseTime_Alarm_Btn");
+                                    //        if (result == 1)
+                                    //        {
+                                    //            DateTime.UtcNow.ToString();
+                                    //            AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
+                                    //            LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳成功：{newlastAnalyseTime_Alarm_Btn}\r\n");
+
+                                    //            // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime_Alarm_Btn
+                                    //            DBSystemConfig dbSystemConfig = new DBSystemConfig();
+                                    //            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime_Alarm_Btn'");
+                                    //            lastAnalyseTime_Alarm_Btn = list[0].Value;
+                                    //        }
+                                    //        else
+                                    //        {
+                                    //            LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳失败：{newlastAnalyseTime_Alarm_Btn}\r\n");
+                                    //            AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
+                                    //        }
+
+                                    //    }
+                                    //} 
+
+                                    #endregion
                                     isStartExec10 = false;
                                     isAnalyzing = false;
                                 }
@@ -865,12 +964,12 @@ namespace Slac_DataAnalysis.FormPage
                             if (isNewVersion)
                             {
                                 // 分段查询处理模式，根据时间段更新看板服务器数据库 _bit表
-                                ssqlDel = $"delete from {lineID}_bit where pt >= '{startTime}' and pt < '{endTime}' and workdate = '{workdate}' and workshift = '{workshift}' and line_id = '{lineID}' and device_id = '{deviceID}' and msg_id like '{msgID}%'";
+                                ssqlDel = $"delete from {lineID}_alarm_btn where pt >= '{startTime}' and pt < '{endTime}' and workdate = '{workdate}' and workshift = '{workshift}' and line_id = '{lineID}' and device_id = '{deviceID}' and msg_id like '{msgID}%'";
                             }
                             else
                             {
                                 // 班次查询处理模式，根据班次更新看板服务器数据库 _bit表
-                                ssqlDel = "delete from " + lineID + "_bit where workdate='" + workdate + "' and workshift='" + workshift + "'  and line_id='" + lineID + "' and device_id='" + deviceID + "' and msg_id like '" + msgID + "%'";
+                                ssqlDel = "delete from " + lineID + "_alarm_btn where workdate='" + workdate + "' and workshift='" + workshift + "'  and line_id='" + lineID + "' and device_id='" + deviceID + "' and msg_id like '" + msgID + "%'";
                             }
 
                             int execCount = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssqlDel);
@@ -1096,12 +1195,12 @@ namespace Slac_DataAnalysis.FormPage
                             if (isNewVersion)
                             {
                                 // 分段查询处理模式，根据时间段更新看板服务器数据库 _bit表
-                                ssqlDel = $"delete from {lineID}_bit where pt >= '{startTime}' and pt < '{endTime}' and workdate = '{workdate}' and workshift = '{workshift}' and line_id = '{lineID}' and device_id = '{deviceID}' and msg_id like '{msgID}%'";
+                                ssqlDel = $"delete from {lineID}_alarm_btn where pt >= '{startTime}' and pt < '{endTime}' and workdate = '{workdate}' and workshift = '{workshift}' and line_id = '{lineID}' and device_id = '{deviceID}' and msg_id like '{msgID}%'";
                             }
                             else
                             {
                                 // 班次查询处理模式，根据班次更新看板服务器数据库 _bit表
-                                ssqlDel = "delete from " + lineID + "_bit where workdate='" + workdate + "' and workshift='" + workshift + "'  and line_id='" + lineID + "' and device_id='" + deviceID + "' and msg_id like '" + msgID + "%'";
+                                ssqlDel = "delete from " + lineID + "_alarm_btn where workdate='" + workdate + "' and workshift='" + workshift + "'  and line_id='" + lineID + "' and device_id='" + deviceID + "' and msg_id like '" + msgID + "%'";
                             }
 
                             int execCount = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssqlDel);
