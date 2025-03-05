@@ -77,7 +77,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(220, 19);
             this.label1.TabIndex = 38;
-            this.label1.Text = "按钮报警分析日志记录:";
+            this.label1.Text = "按钮开关分析日志记录:";
             // 
             // timer1
             // 

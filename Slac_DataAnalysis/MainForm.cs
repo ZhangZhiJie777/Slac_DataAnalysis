@@ -20,14 +20,14 @@ namespace Slac_DataAnalysis
     {
         private frm_main_yzyl_bit frm_Main_Yzyl_bit = null; // 报警分析
         private frm_main_yzyl frm_Main_Yzyl = null;         // 统计分析
-        private frm_main_yzyl_bit_alarm_btn frm_Main_Yzyl_Bit_Alarm_Btn = null; // 按钮报警分析
+        private frm_main_yzyl_bit_alarm_btn frm_Main_Yzyl_Bit_Alarm_Btn = null; // 按钮开关分析
 
         public volatile static string alarm_Model = string.Empty;     // 报警模式
-        public volatile static string alarm_Btn_Model = string.Empty; // 按钮报警模式
+        public volatile static string alarm_Btn_Model = string.Empty; // 按钮开关模式
         private static string line_id = string.Empty; // 线体号
 
         private volatile string lastAnalyseTime;           // 上一个时间段分析开始时间
-        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮报警）
+        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮开关）
 
         //private TimedTask _timedTask;
 
@@ -57,7 +57,7 @@ namespace Slac_DataAnalysis
                 //上一次报警分析时间
                 lastAnalyseTime = list.Find(e => e.Name.Trim() == "lastAnalyseTime").Value.Trim();
 
-                // 上一次按钮报警分析时间
+                // 上一次按钮开关分析时间
                 lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
 
             }
@@ -235,7 +235,8 @@ namespace Slac_DataAnalysis
             }
             else
             {
-                #region 模式确认
+                #region 模式确认   
+
                 if (radioButton_Alarm_Sub.Checked)
                 {
                     alarm_Model = "分段模式";
@@ -243,11 +244,13 @@ namespace Slac_DataAnalysis
                 else { alarm_Model = "整班次模式"; }
 
                 GetParamConfig();
+
                 DateTime dt;
                 if (!DateTime.TryParse(lastAnalyseTime, out dt))
                 {
                     radioButton_Alarm_Sub.Checked = false;
                     radioButton_Alarm_Shift.Checked = true;
+                    alarm_Model = "整班次模式";
                 }
 
                 if (radioButton_Alarm_Shift.Checked)
@@ -265,6 +268,7 @@ namespace Slac_DataAnalysis
                     btn_Alarm.Enabled = false;
                 }
 
+                
                 #endregion
 
                 frm_Main_Yzyl_bit = new frm_main_yzyl_bit();
@@ -307,7 +311,7 @@ namespace Slac_DataAnalysis
         }
 
         /// <summary>
-        /// 切换页面：按钮报警分析
+        /// 切换页面：按钮开关分析
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -334,6 +338,7 @@ namespace Slac_DataAnalysis
                 {
                     radioButton_Alarm_Btn_Sub.Checked = false;
                     radioButton_Alarm_Btn_Shift.Checked = true;
+                    alarm_Btn_Model = "整班次模式";
                 }
 
                 if (radioButton_Alarm_Btn_Shift.Checked)
@@ -463,7 +468,7 @@ namespace Slac_DataAnalysis
         }
 
         /// <summary>
-        /// 关闭按钮报警分析信息页面
+        /// 关闭按钮开关分析信息页面
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -474,7 +479,7 @@ namespace Slac_DataAnalysis
                 bool result = false;
                 this.Invoke(new Action(() =>
                 {
-                    if (MessageBox.Show(this, "确定要关闭按钮报警分析吗？", "提示", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                    if (MessageBox.Show(this, "确定要关闭按钮开关分析吗？", "提示", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                     {
                         result = true;
                     }
@@ -548,12 +553,12 @@ namespace Slac_DataAnalysis
                                 obj = obj.ToString();
                                 break;
 
-                            case "按钮报警分析时间":
+                            case "按钮开关分析时间":
                                 obj = dateTimePicker_Alarm_Btn.Value;
                                 obj = (DateTime)obj;
                                 break;
 
-                            case "按钮报警分析班次":
+                            case "按钮开关分析班次":
                                 obj = comboBox_Alarm_Btn.Text;
                                 obj = obj.ToString();
                                 break;
@@ -604,11 +609,11 @@ namespace Slac_DataAnalysis
                                 comboBox_Stats.Text = obj.ToString();
                                 break;
 
-                            case "按钮报警分析时间":
+                            case "按钮开关分析时间":
                                 dateTimePicker_Alarm_Btn.Value = Convert.ToDateTime(obj);
                                 break;
 
-                            case "按钮报警分析班次":
+                            case "按钮开关分析班次":
                                 comboBox_Alarm_Btn.Text = obj.ToString();
                                 break;
 
@@ -767,6 +772,7 @@ namespace Slac_DataAnalysis
 
             Btn_Form1Stop_Click(null, null); // 关闭报警分析
             Btn_Form2Stop_Click(null, null); // 关闭统计分析
+            Btn_Form3Stop_Click(null, null); // 关闭按钮开关分析
 
             this.Dispose();
             this.Close();   // 手动关闭窗体会重新触发FormClosing事件，所以需要添加标志变量isFormClosing来避免重复关闭窗体
@@ -803,7 +809,7 @@ namespace Slac_DataAnalysis
         }
 
         /// <summary>
-        /// 按钮报警分析
+        /// 按钮开关分析
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -811,12 +817,12 @@ namespace Slac_DataAnalysis
         {
             if (frm_Main_Yzyl_Bit_Alarm_Btn != null)
             {
-                frm_Main_Yzyl_Bit_Alarm_Btn.button2_Click(null, null); // 开启按钮报警分析
+                frm_Main_Yzyl_Bit_Alarm_Btn.button2_Click(null, null); // 开启按钮开关分析
             }
         }
         
         /// <summary>
-        /// 按钮报警分析模式选择——分段模式
+        /// 按钮开关分析模式选择——分段模式
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -831,7 +837,7 @@ namespace Slac_DataAnalysis
                 {
                     radioButton_Alarm_Btn_Sub.Checked = false;
                     radioButton_Alarm_Btn_Shift.Checked = true;
-                    MessageBox.Show(this,"按钮报警分析：无法选择分析模式，请正确配置数据库上一次分析时间戳", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this,"按钮开关分析：无法选择分析模式，请正确配置数据库上一次分析时间戳", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
 
@@ -844,7 +850,7 @@ namespace Slac_DataAnalysis
         }
 
         /// <summary>
-        /// 按钮报警分析模式选择——分段模式
+        /// 按钮开关分析模式选择——分段模式
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>

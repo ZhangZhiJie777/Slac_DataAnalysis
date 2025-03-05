@@ -59,7 +59,7 @@ namespace Slac_DataAnalysis.FormPage
 
         private volatile bool isAnalyzing;                 // 是否正在分析
         //private volatile string lastAnalyseTime;           // 上一个时间段分析开始时间
-        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮报警）
+        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮开关）
         private volatile bool isNewVersion = false;        // 是否是最新版本(true:最新版本,采用标志位时间戳，分段分析  false:不是最新版本，直接分析整个班次) 在获取lastAnalyseTime_Alarm_Btn参数成功的情况下，默认是最新版本
         private volatile bool isRightAnalysis = true;      // 这次分析是否是正常分析流程（表示这个时间段需要重新分析）
         private volatile bool isInitRedis = false;         // 是否初始化Redis的键值（若当前时间段有报错，重新分析，需要重置Redis）
@@ -139,9 +139,9 @@ namespace Slac_DataAnalysis.FormPage
                 // Radis配置
                 RedisServer = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[0];
                 RedisPort = Convert.ToInt32(list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[1]);
-                RedisPasswd = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[2];                              
+                RedisPasswd = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[2];
 
-                // 上一次按钮报警分析时间
+                // 上一次按钮开关分析时间
                 lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
 
                 // 分段模式下，初始化为班次开始时间
@@ -229,10 +229,17 @@ namespace Slac_DataAnalysis.FormPage
         /// <param name="e"></param>
         public void button2_Click(object sender, EventArgs e)
         {
-            getTodayAndShift();
-            AddListStr("开始处理！ " + DateTime.Now.ToString());
+            if (!isAnalyzing)
+            {
+                getTodayAndShift();
+                AddListStr("开始处理！ " + DateTime.Now.ToString());
 
-            isStartExec10 = true;
+                isStartExec10 = true;
+            }
+            else
+            {
+                AddListStr("正在处理中，请稍后！ " + DateTime.Now.ToString());
+            }
         }
 
         /// <summary>
@@ -265,8 +272,8 @@ namespace Slac_DataAnalysis.FormPage
                             workshift = "0";
                         }
 
-                        UpdateMainFormSettingsInfoEvent?.Invoke($"按钮报警分析时间", dt);
-                        UpdateMainFormSettingsInfoEvent?.Invoke($"按钮报警分析班次", workshift == "1" ? "白班" : "晚班");
+                        UpdateMainFormSettingsInfoEvent?.Invoke($"按钮开关分析时间", dt);
+                        UpdateMainFormSettingsInfoEvent?.Invoke($"按钮开关分析班次", workshift == "1" ? "白班" : "晚班");
 
                         #endregion
                     }
@@ -279,9 +286,9 @@ namespace Slac_DataAnalysis.FormPage
                         isNewVersion = false;
 
                         // lastAnalyseTime_Alarm_Btn参数不是时间格式，则默认按照之前版本的逻辑（直接查询一个班次）获取时间
-                        workdate = Convert.ToDateTime(FetchMainFormSettingsInfoEvent?.Invoke("按钮报警分析时间")).Date.ToString("yyyy-MM-dd");
+                        workdate = Convert.ToDateTime(FetchMainFormSettingsInfoEvent?.Invoke("按钮开关分析时间")).Date.ToString("yyyy-MM-dd");
                         //workdate = dateTimePicker1.Value.Date.ToString("yyyy-MM-dd");
-                        string shift = FetchMainFormSettingsInfoEvent?.Invoke("报警分析班次").ToString();
+                        string shift = FetchMainFormSettingsInfoEvent?.Invoke("按钮开关分析班次").ToString();
 
                         if (shift == "白班")
                         {
@@ -332,110 +339,123 @@ namespace Slac_DataAnalysis.FormPage
             }
         }
 
+        private bool isProcessing = false; // 定时器是否正在处理
 
         /// <summary>
         /// 计时器事件：每隔一秒触发一次
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void timer1_Tick(object sender, EventArgs e)
+        private async void timer1_Tick(object sender, EventArgs e)
         {
             try
-            {
-                if (TimerStatus)
+            {                
+                if (isProcessing || isAnalyzing)
+                    return;  // 如果正在处理，跳过当前的事件
+
+                isProcessing = true;  // 设置为正在处理
+
+                // 其中执行查询操作，可能耗时，异步执行，避免阻塞UI线程
+                await Task.Run(() =>
                 {
-                    string type = "报警分析";
-                    DateTime nowtime = DateTime.Now;
-                    if (!isAnalyzing && (
-                       nowtime.ToString("mm:ss") == "01:00" ||
-                       //nowtime.ToString("mm:ss") == "16:00" || //nowtime.ToString("mm:ss") == "06:00" || nowtime.ToString("mm:ss") == "16:00" ||
-                       nowtime.ToString("mm:ss") == "31:00"
-                      // nowtime.ToString("mm:ss") == "46:00"   // || nowtime.ToString("mm:ss") == "26:00" || nowtime.ToString("mm:ss") == "36:00" ||   nowtime.ToString("mm:ss") == "41:00" ||
-                      // nowtime.ToString("mm:ss") == "51:00"  //  || nowtime.ToString("mm:ss") == "46:00" || nowtime.ToString("mm:ss") == "56:00"
-                      ))
+                    if (TimerStatus)
                     {
-                        if (nowtime < Convert.ToDateTime("08:30:00"))
+                        string type = "按钮开关分析";
+                        DateTime nowtime = DateTime.Now;
+                        if (!isAnalyzing && (
+                           nowtime.ToString("mm:ss") == "01:00" ||
+                           //nowtime.ToString("mm:ss") == "16:00" || //nowtime.ToString("mm:ss") == "06:00" || nowtime.ToString("mm:ss") == "16:00" ||
+                           nowtime.ToString("mm:ss") == "31:00"
+                          // nowtime.ToString("mm:ss") == "46:00"   // || nowtime.ToString("mm:ss") == "26:00" || nowtime.ToString("mm:ss") == "36:00" ||   nowtime.ToString("mm:ss") == "41:00" ||
+                          // nowtime.ToString("mm:ss") == "51:00"  //  || nowtime.ToString("mm:ss") == "46:00" || nowtime.ToString("mm:ss") == "56:00"
+                          ))
                         {
-                            //dateTimePicker1.Value = DateTime.Now.AddDays(-1);
-                            //comboBox1.Text = "晚班";
-                            UpdateMainFormSettingsInfoEvent?.Invoke($"{type}时间", DateTime.Now.AddDays(-1));
-                            UpdateMainFormSettingsInfoEvent?.Invoke($"{type}班次", "晚班");
-                            button2_Click(sender, e);
-                        }
-                        else if (nowtime > Convert.ToDateTime("20:30:00"))
-                        {
-                            //nowtime.ToString("HH:mm:ss") == "20:41:00" || nowtime.ToString("HH:mm:ss") == "20:51:00"
-                            //dateTimePicker1.Value = DateTime.Now;
-                            //comboBox1.Text = "晚班";
-                            UpdateMainFormSettingsInfoEvent?.Invoke($"{type}时间", DateTime.Now);
-                            UpdateMainFormSettingsInfoEvent?.Invoke($"{type}班次", "晚班");
-                            button2_Click(sender, e);
+                            if (nowtime < Convert.ToDateTime("08:30:00"))
+                            {
+                                //dateTimePicker1.Value = DateTime.Now.AddDays(-1);
+                                //comboBox1.Text = "晚班";
+                                UpdateMainFormSettingsInfoEvent?.Invoke($"{type}时间", DateTime.Now.AddDays(-1));
+                                UpdateMainFormSettingsInfoEvent?.Invoke($"{type}班次", "晚班");
+                                button2_Click(sender, e);
+                            }
+                            else if (nowtime > Convert.ToDateTime("20:30:00"))
+                            {
+                                //nowtime.ToString("HH:mm:ss") == "20:41:00" || nowtime.ToString("HH:mm:ss") == "20:51:00"
+                                //dateTimePicker1.Value = DateTime.Now;
+                                //comboBox1.Text = "晚班";
+                                UpdateMainFormSettingsInfoEvent?.Invoke($"{type}时间", DateTime.Now);
+                                UpdateMainFormSettingsInfoEvent?.Invoke($"{type}班次", "晚班");
+                                button2_Click(sender, e);
+                            }
+                            else
+                            {
+                                //dateTimePicker1.Value = DateTime.Now;
+                                //comboBox1.Text = "白班";
+                                UpdateMainFormSettingsInfoEvent?.Invoke($"{type}时间", DateTime.Now);
+                                UpdateMainFormSettingsInfoEvent?.Invoke($"{type}班次", "白班");
+                                button2_Click(sender, e);
+                            }
                         }
                         else
                         {
-                            //dateTimePicker1.Value = DateTime.Now;
-                            //comboBox1.Text = "白班";
-                            UpdateMainFormSettingsInfoEvent?.Invoke($"{type}时间", DateTime.Now);
-                            UpdateMainFormSettingsInfoEvent?.Invoke($"{type}班次", "白班");
-                            button2_Click(sender, e);
-                        }
-                    }
-                    else
-                    {
-                        // 新版本且不处于分析状态时，判断数据库最新报警信息时间是否大于上次分析时间+30分钟，大于则执行分析
-                        if (isNewVersion && !isAnalyzing)
-                        {
-                            // 查询数据库最新报警信息的时间（eventtime）
-                            string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 50 ";
-                            string newEventtime = PostResponse(httpClientTimer, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
-
-                            List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
-
-                            DateTime newDbTime;// click house 数据库最新报警信息的时间
-                            DateTime lastTime; // 上一次分析时间戳时间
-
-                            bool isStartExecl = false;
-
-                            if (Eventtime.Count == 50)
+                            // 新版本且不处于分析状态时，判断数据库最新报警信息时间是否大于上次分析时间+30分钟，大于则执行分析
+                            if (isNewVersion && !isAnalyzing)
                             {
-                                // 遍历最新的五十条报警数据，如果存在一条报警时间小于上次分析时间+30分钟，则不执行分析
-                                foreach (var item in Eventtime)
+                                // 查询数据库最新报警信息的时间（eventtime）
+                                string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE msg_id >=150 and msg_id <180 ORDER BY eventtime DESC LIMIT 100 ";
+                                string newEventtime = PostResponse(httpClientTimer, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
+
+                                List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
+
+                                DateTime newDbTime;// click house 数据库最新报警信息的时间
+                                DateTime lastTime; // 上一次分析时间戳时间
+
+                                bool isStartExecl = false;
+
+                                if (Eventtime.Count == 100)
                                 {
-                                    if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                    // 遍历最新的五十条报警数据，如果存在一条报警时间小于上次分析时间+30分钟，则不执行分析
+                                    foreach (var item in Eventtime)
                                     {
-                                        if (lastTime.AddMinutes(30) > newDbTime)
+                                        if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
                                         {
-                                            isStartExecl = false;
-                                            break;
+                                            if (lastTime.AddMinutes(31) > newDbTime)
+                                            {
+                                                isStartExecl = false;
+                                                break;
+                                            }
+                                            else { isStartExecl = true; }
                                         }
-                                        else { isStartExecl = true; }
                                     }
                                 }
+
+                                if (isStartExecl)
+                                {
+                                    //button2_Click(sender, e);
+                                    getTodayAndShift();
+                                    isStartExec10 = true;
+                                }
+
+                                Eventtime.Clear();
+
+                                //if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                //{
+                                //    if (lastTime.AddMinutes(30) < newDbTime)
+                                //    {
+
+                                //        //button2_Click(sender, e);
+                                //        getTodayAndShift();
+                                //        isStartExec10 = true;
+
+                                //    }
+                                //}
                             }
-
-                            if (isStartExecl)
-                            {
-                                //button2_Click(sender, e);
-                                getTodayAndShift();
-                                isStartExec10 = true;
-                            }
-
-                            Eventtime.Clear();
-
-                            //if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
-                            //{
-                            //    if (lastTime.AddMinutes(30) < newDbTime)
-                            //    {
-
-                            //        //button2_Click(sender, e);
-                            //        getTodayAndShift();
-                            //        isStartExec10 = true;
-
-                            //    }
-                            //}
                         }
                     }
-                }
+                });
+                
+
+                isProcessing = false;  // 定时器处理结束
             }
             catch (Exception ex)
             {
@@ -663,7 +683,7 @@ namespace Slac_DataAnalysis.FormPage
                                 if (isNewVersion)
                                 {
                                     // 查询数据库最新报警信息的时间（eventtime字段）
-                                    string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name}  ORDER BY eventtime DESC LIMIT 50 ";
+                                    string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE msg_id >=150 and msg_id <180 ORDER BY eventtime DESC LIMIT 100 ";
 
                                     string newEventtime = string.Empty;
 
@@ -679,13 +699,13 @@ namespace Slac_DataAnalysis.FormPage
 
                                     // 判断是否需要更新上次分析时间戳，继续下一个时间段分析
                                     bool isContinueNext = false;
-                                    if (Eventtime.Count == 50)
+                                    if (Eventtime.Count == 100)
                                     {
                                         foreach (var item in Eventtime)
                                         {
                                             if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
                                             {
-                                                if (lastTime.AddMinutes(30) > newDbTime)
+                                                if (lastTime.AddMinutes(31) > newDbTime)
                                                 {
                                                     isContinueNext = false;
                                                     break;
@@ -694,7 +714,7 @@ namespace Slac_DataAnalysis.FormPage
                                             }
                                         }
                                     }
-                                    
+
                                     if (isContinueNext)
                                     {
                                         // 一次分析完成，更新上次分析时间戳（加半小时）
@@ -715,6 +735,7 @@ namespace Slac_DataAnalysis.FormPage
                                         }
                                         else
                                         {
+                                            isInitRedis = true;
                                             LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳失败：{newlastAnalyseTime_Alarm_Btn}\r\n");
                                             AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
                                         }
@@ -765,7 +786,8 @@ namespace Slac_DataAnalysis.FormPage
                                     DateTime ds, de;
                                     DateTime.TryParse(startTime, out ds);
                                     DateTime.TryParse(endTime, out de);
-                                    if (de.Day < DateTime.Now.Day)
+                                    DateTime nowTime = DateTime.Now.ToUniversalTime().AddMinutes(30); // 当前UTC时间+30分钟
+                                    if (de < nowTime)
                                     {
                                         LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"前startTime：{startTime}，前endTime：{endTime} 后startTime：{ds.AddHours(12).ToString()}，后endTime：{de.AddHours(12).ToString()}");
 
@@ -778,13 +800,13 @@ namespace Slac_DataAnalysis.FormPage
 
                                         if (workshift == "0")
                                         {
-                                            UpdateMainFormSettingsInfoEvent?.Invoke($"按钮报警分析时间", ds.AddHours(12));
-                                            UpdateMainFormSettingsInfoEvent?.Invoke($"按钮报警分析班次", "晚班");
+                                            UpdateMainFormSettingsInfoEvent?.Invoke($"按钮开关分析时间", ds.AddHours(12));
+                                            UpdateMainFormSettingsInfoEvent?.Invoke($"按钮开关分析班次", "晚班");
                                         }
                                         else
                                         {
-                                            UpdateMainFormSettingsInfoEvent?.Invoke($"按钮报警分析时间", ds.AddHours(12));
-                                            UpdateMainFormSettingsInfoEvent?.Invoke($"按钮报警分析班次", "白班");
+                                            UpdateMainFormSettingsInfoEvent?.Invoke($"按钮开关分析时间", ds.AddHours(12));
+                                            UpdateMainFormSettingsInfoEvent?.Invoke($"按钮开关分析班次", "白班");
                                         }
 
                                         isStartExec10 = true;

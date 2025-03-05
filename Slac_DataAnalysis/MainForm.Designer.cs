@@ -32,10 +32,13 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.groupBox_Alarm = new System.Windows.Forms.GroupBox();
             this.btn_Alarm = new System.Windows.Forms.Button();
-            this.comboBox_Alarm = new System.Windows.Forms.ComboBox();
-            this.dateTimePicker_Alarm = new System.Windows.Forms.DateTimePicker();
             this.Btn_Form1Stop = new System.Windows.Forms.Button();
+            this.comboBox_Alarm = new System.Windows.Forms.ComboBox();
+            this.radioButton_Alarm_Sub = new System.Windows.Forms.RadioButton();
+            this.dateTimePicker_Alarm = new System.Windows.Forms.DateTimePicker();
+            this.radioButton_Alarm_Shift = new System.Windows.Forms.RadioButton();
             this.Btn_Form1 = new System.Windows.Forms.Button();
             this.panel3 = new System.Windows.Forms.Panel();
             this.panel5 = new System.Windows.Forms.Panel();
@@ -50,24 +53,21 @@
             this.btn_closeme = new System.Windows.Forms.ToolStripMenuItem();
             this.panel6 = new System.Windows.Forms.Panel();
             this.groupBox_Alarm_Btn = new System.Windows.Forms.GroupBox();
+            this.btn_Alarm_Btn = new System.Windows.Forms.Button();
+            this.Btn_Form3Stop = new System.Windows.Forms.Button();
+            this.comboBox_Alarm_Btn = new System.Windows.Forms.ComboBox();
+            this.Btn_Form3 = new System.Windows.Forms.Button();
+            this.dateTimePicker_Alarm_Btn = new System.Windows.Forms.DateTimePicker();
             this.radioButton_Alarm_Btn_Sub = new System.Windows.Forms.RadioButton();
             this.radioButton_Alarm_Btn_Shift = new System.Windows.Forms.RadioButton();
-            this.btn_Alarm_Btn = new System.Windows.Forms.Button();
-            this.comboBox_Alarm_Btn = new System.Windows.Forms.ComboBox();
-            this.dateTimePicker_Alarm_Btn = new System.Windows.Forms.DateTimePicker();
-            this.Btn_Form3Stop = new System.Windows.Forms.Button();
-            this.Btn_Form3 = new System.Windows.Forms.Button();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.groupBox_Alarm = new System.Windows.Forms.GroupBox();
-            this.radioButton_Alarm_Shift = new System.Windows.Forms.RadioButton();
-            this.radioButton_Alarm_Sub = new System.Windows.Forms.RadioButton();
             this.panel2.SuspendLayout();
+            this.groupBox_Alarm.SuspendLayout();
             this.panel3.SuspendLayout();
             this.panel5.SuspendLayout();
             this.menu_icon.SuspendLayout();
             this.panel6.SuspendLayout();
             this.groupBox_Alarm_Btn.SuspendLayout();
-            this.groupBox_Alarm.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
@@ -88,6 +88,23 @@
             this.panel2.Size = new System.Drawing.Size(241, 179);
             this.panel2.TabIndex = 1;
             // 
+            // groupBox_Alarm
+            // 
+            this.groupBox_Alarm.Controls.Add(this.btn_Alarm);
+            this.groupBox_Alarm.Controls.Add(this.Btn_Form1Stop);
+            this.groupBox_Alarm.Controls.Add(this.comboBox_Alarm);
+            this.groupBox_Alarm.Controls.Add(this.radioButton_Alarm_Sub);
+            this.groupBox_Alarm.Controls.Add(this.dateTimePicker_Alarm);
+            this.groupBox_Alarm.Controls.Add(this.radioButton_Alarm_Shift);
+            this.groupBox_Alarm.Controls.Add(this.Btn_Form1);
+            this.groupBox_Alarm.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.groupBox_Alarm.Location = new System.Drawing.Point(3, 3);
+            this.groupBox_Alarm.Name = "groupBox_Alarm";
+            this.groupBox_Alarm.Size = new System.Drawing.Size(231, 169);
+            this.groupBox_Alarm.TabIndex = 0;
+            this.groupBox_Alarm.TabStop = false;
+            this.groupBox_Alarm.Text = "分析模式";
+            // 
             // btn_Alarm
             // 
             this.btn_Alarm.BackColor = System.Drawing.Color.White;
@@ -99,6 +116,18 @@
             this.btn_Alarm.Text = "开始";
             this.btn_Alarm.UseVisualStyleBackColor = false;
             this.btn_Alarm.Click += new System.EventHandler(this.btn_Alarm_Click);
+            // 
+            // Btn_Form1Stop
+            // 
+            this.Btn_Form1Stop.BackColor = System.Drawing.Color.White;
+            this.Btn_Form1Stop.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.Btn_Form1Stop.Location = new System.Drawing.Point(158, 56);
+            this.Btn_Form1Stop.Name = "Btn_Form1Stop";
+            this.Btn_Form1Stop.Size = new System.Drawing.Size(67, 29);
+            this.Btn_Form1Stop.TabIndex = 5;
+            this.Btn_Form1Stop.Text = "停止";
+            this.Btn_Form1Stop.UseVisualStyleBackColor = false;
+            this.Btn_Form1Stop.Click += new System.EventHandler(this.Btn_Form1Stop_Click);
             // 
             // comboBox_Alarm
             // 
@@ -113,6 +142,21 @@
             this.comboBox_Alarm.TabIndex = 28;
             this.comboBox_Alarm.Text = "白班";
             // 
+            // radioButton_Alarm_Sub
+            // 
+            this.radioButton_Alarm_Sub.AutoSize = true;
+            this.radioButton_Alarm_Sub.Checked = true;
+            this.radioButton_Alarm_Sub.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.radioButton_Alarm_Sub.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.radioButton_Alarm_Sub.Location = new System.Drawing.Point(121, 27);
+            this.radioButton_Alarm_Sub.Name = "radioButton_Alarm_Sub";
+            this.radioButton_Alarm_Sub.Size = new System.Drawing.Size(67, 23);
+            this.radioButton_Alarm_Sub.TabIndex = 31;
+            this.radioButton_Alarm_Sub.TabStop = true;
+            this.radioButton_Alarm_Sub.Text = "分段";
+            this.radioButton_Alarm_Sub.UseVisualStyleBackColor = true;
+            this.radioButton_Alarm_Sub.CheckedChanged += new System.EventHandler(this.radioButton_Alarm_Sub_CheckedChanged);
+            // 
             // dateTimePicker_Alarm
             // 
             this.dateTimePicker_Alarm.CalendarFont = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
@@ -124,17 +168,16 @@
             this.dateTimePicker_Alarm.Size = new System.Drawing.Size(138, 29);
             this.dateTimePicker_Alarm.TabIndex = 27;
             // 
-            // Btn_Form1Stop
+            // radioButton_Alarm_Shift
             // 
-            this.Btn_Form1Stop.BackColor = System.Drawing.Color.White;
-            this.Btn_Form1Stop.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.Btn_Form1Stop.Location = new System.Drawing.Point(158, 56);
-            this.Btn_Form1Stop.Name = "Btn_Form1Stop";
-            this.Btn_Form1Stop.Size = new System.Drawing.Size(67, 29);
-            this.Btn_Form1Stop.TabIndex = 5;
-            this.Btn_Form1Stop.Text = "停止";
-            this.Btn_Form1Stop.UseVisualStyleBackColor = false;
-            this.Btn_Form1Stop.Click += new System.EventHandler(this.Btn_Form1Stop_Click);
+            this.radioButton_Alarm_Shift.AutoSize = true;
+            this.radioButton_Alarm_Shift.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.radioButton_Alarm_Shift.Location = new System.Drawing.Point(18, 28);
+            this.radioButton_Alarm_Shift.Name = "radioButton_Alarm_Shift";
+            this.radioButton_Alarm_Shift.Size = new System.Drawing.Size(87, 23);
+            this.radioButton_Alarm_Shift.TabIndex = 30;
+            this.radioButton_Alarm_Shift.Text = "整班次";
+            this.radioButton_Alarm_Shift.UseVisualStyleBackColor = true;
             // 
             // Btn_Form1
             // 
@@ -291,6 +334,66 @@
             this.groupBox_Alarm_Btn.TabStop = false;
             this.groupBox_Alarm_Btn.Text = "分析模式";
             // 
+            // btn_Alarm_Btn
+            // 
+            this.btn_Alarm_Btn.BackColor = System.Drawing.Color.White;
+            this.btn_Alarm_Btn.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btn_Alarm_Btn.Location = new System.Drawing.Point(158, 87);
+            this.btn_Alarm_Btn.Name = "btn_Alarm_Btn";
+            this.btn_Alarm_Btn.Size = new System.Drawing.Size(67, 29);
+            this.btn_Alarm_Btn.TabIndex = 31;
+            this.btn_Alarm_Btn.Text = "开始";
+            this.btn_Alarm_Btn.UseVisualStyleBackColor = false;
+            this.btn_Alarm_Btn.Click += new System.EventHandler(this.btn_BtnAlarm_Click);
+            // 
+            // Btn_Form3Stop
+            // 
+            this.Btn_Form3Stop.BackColor = System.Drawing.Color.White;
+            this.Btn_Form3Stop.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.Btn_Form3Stop.Location = new System.Drawing.Point(158, 52);
+            this.Btn_Form3Stop.Name = "Btn_Form3Stop";
+            this.Btn_Form3Stop.Size = new System.Drawing.Size(67, 29);
+            this.Btn_Form3Stop.TabIndex = 6;
+            this.Btn_Form3Stop.Text = "停止";
+            this.Btn_Form3Stop.UseVisualStyleBackColor = false;
+            this.Btn_Form3Stop.Click += new System.EventHandler(this.Btn_Form3Stop_Click);
+            // 
+            // comboBox_Alarm_Btn
+            // 
+            this.comboBox_Alarm_Btn.Font = new System.Drawing.Font("宋体", 15F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.comboBox_Alarm_Btn.FormattingEnabled = true;
+            this.comboBox_Alarm_Btn.Items.AddRange(new object[] {
+            "白班",
+            "晚班"});
+            this.comboBox_Alarm_Btn.Location = new System.Drawing.Point(6, 122);
+            this.comboBox_Alarm_Btn.Name = "comboBox_Alarm_Btn";
+            this.comboBox_Alarm_Btn.Size = new System.Drawing.Size(138, 28);
+            this.comboBox_Alarm_Btn.TabIndex = 28;
+            this.comboBox_Alarm_Btn.Text = "白班";
+            // 
+            // Btn_Form3
+            // 
+            this.Btn_Form3.BackColor = System.Drawing.Color.White;
+            this.Btn_Form3.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.Btn_Form3.Location = new System.Drawing.Point(6, 52);
+            this.Btn_Form3.Name = "Btn_Form3";
+            this.Btn_Form3.Size = new System.Drawing.Size(138, 29);
+            this.Btn_Form3.TabIndex = 2;
+            this.Btn_Form3.Text = "按钮开关分析";
+            this.Btn_Form3.UseVisualStyleBackColor = false;
+            this.Btn_Form3.Click += new System.EventHandler(this.Btn_Form3_Click);
+            // 
+            // dateTimePicker_Alarm_Btn
+            // 
+            this.dateTimePicker_Alarm_Btn.CalendarFont = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.dateTimePicker_Alarm_Btn.CustomFormat = "";
+            this.dateTimePicker_Alarm_Btn.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.dateTimePicker_Alarm_Btn.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dateTimePicker_Alarm_Btn.Location = new System.Drawing.Point(6, 87);
+            this.dateTimePicker_Alarm_Btn.Name = "dateTimePicker_Alarm_Btn";
+            this.dateTimePicker_Alarm_Btn.Size = new System.Drawing.Size(138, 29);
+            this.dateTimePicker_Alarm_Btn.TabIndex = 27;
+            // 
             // radioButton_Alarm_Btn_Sub
             // 
             this.radioButton_Alarm_Btn_Sub.AutoSize = true;
@@ -317,109 +420,6 @@
             this.radioButton_Alarm_Btn_Shift.Text = "整班次";
             this.radioButton_Alarm_Btn_Shift.UseVisualStyleBackColor = true;
             // 
-            // btn_Alarm_Btn
-            // 
-            this.btn_Alarm_Btn.BackColor = System.Drawing.Color.White;
-            this.btn_Alarm_Btn.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btn_Alarm_Btn.Location = new System.Drawing.Point(158, 87);
-            this.btn_Alarm_Btn.Name = "btn_Alarm_Btn";
-            this.btn_Alarm_Btn.Size = new System.Drawing.Size(67, 29);
-            this.btn_Alarm_Btn.TabIndex = 31;
-            this.btn_Alarm_Btn.Text = "开始";
-            this.btn_Alarm_Btn.UseVisualStyleBackColor = false;
-            this.btn_Alarm_Btn.Click += new System.EventHandler(this.btn_BtnAlarm_Click);
-            // 
-            // comboBox_Alarm_Btn
-            // 
-            this.comboBox_Alarm_Btn.Font = new System.Drawing.Font("宋体", 15F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.comboBox_Alarm_Btn.FormattingEnabled = true;
-            this.comboBox_Alarm_Btn.Items.AddRange(new object[] {
-            "白班",
-            "晚班"});
-            this.comboBox_Alarm_Btn.Location = new System.Drawing.Point(6, 122);
-            this.comboBox_Alarm_Btn.Name = "comboBox_Alarm_Btn";
-            this.comboBox_Alarm_Btn.Size = new System.Drawing.Size(138, 28);
-            this.comboBox_Alarm_Btn.TabIndex = 28;
-            this.comboBox_Alarm_Btn.Text = "白班";
-            // 
-            // dateTimePicker_Alarm_Btn
-            // 
-            this.dateTimePicker_Alarm_Btn.CalendarFont = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.dateTimePicker_Alarm_Btn.CustomFormat = "";
-            this.dateTimePicker_Alarm_Btn.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.dateTimePicker_Alarm_Btn.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dateTimePicker_Alarm_Btn.Location = new System.Drawing.Point(6, 87);
-            this.dateTimePicker_Alarm_Btn.Name = "dateTimePicker_Alarm_Btn";
-            this.dateTimePicker_Alarm_Btn.Size = new System.Drawing.Size(138, 29);
-            this.dateTimePicker_Alarm_Btn.TabIndex = 27;
-            // 
-            // Btn_Form3Stop
-            // 
-            this.Btn_Form3Stop.BackColor = System.Drawing.Color.White;
-            this.Btn_Form3Stop.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.Btn_Form3Stop.Location = new System.Drawing.Point(158, 52);
-            this.Btn_Form3Stop.Name = "Btn_Form3Stop";
-            this.Btn_Form3Stop.Size = new System.Drawing.Size(67, 29);
-            this.Btn_Form3Stop.TabIndex = 6;
-            this.Btn_Form3Stop.Text = "停止";
-            this.Btn_Form3Stop.UseVisualStyleBackColor = false;
-            this.Btn_Form3Stop.Click += new System.EventHandler(this.Btn_Form3Stop_Click);
-            // 
-            // Btn_Form3
-            // 
-            this.Btn_Form3.BackColor = System.Drawing.Color.White;
-            this.Btn_Form3.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.Btn_Form3.Location = new System.Drawing.Point(6, 52);
-            this.Btn_Form3.Name = "Btn_Form3";
-            this.Btn_Form3.Size = new System.Drawing.Size(138, 29);
-            this.Btn_Form3.TabIndex = 2;
-            this.Btn_Form3.Text = "按钮报警分析";
-            this.Btn_Form3.UseVisualStyleBackColor = false;
-            this.Btn_Form3.Click += new System.EventHandler(this.Btn_Form3_Click);
-            // 
-            // groupBox_Alarm
-            // 
-            this.groupBox_Alarm.Controls.Add(this.btn_Alarm);
-            this.groupBox_Alarm.Controls.Add(this.Btn_Form1Stop);
-            this.groupBox_Alarm.Controls.Add(this.comboBox_Alarm);
-            this.groupBox_Alarm.Controls.Add(this.radioButton_Alarm_Sub);
-            this.groupBox_Alarm.Controls.Add(this.dateTimePicker_Alarm);
-            this.groupBox_Alarm.Controls.Add(this.radioButton_Alarm_Shift);
-            this.groupBox_Alarm.Controls.Add(this.Btn_Form1);
-            this.groupBox_Alarm.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.groupBox_Alarm.Location = new System.Drawing.Point(3, 3);
-            this.groupBox_Alarm.Name = "groupBox_Alarm";
-            this.groupBox_Alarm.Size = new System.Drawing.Size(231, 169);
-            this.groupBox_Alarm.TabIndex = 0;
-            this.groupBox_Alarm.TabStop = false;
-            this.groupBox_Alarm.Text = "分析模式";
-            // 
-            // radioButton_Alarm_Shift
-            // 
-            this.radioButton_Alarm_Shift.AutoSize = true;
-            this.radioButton_Alarm_Shift.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.radioButton_Alarm_Shift.Location = new System.Drawing.Point(18, 28);
-            this.radioButton_Alarm_Shift.Name = "radioButton_Alarm_Shift";
-            this.radioButton_Alarm_Shift.Size = new System.Drawing.Size(87, 23);
-            this.radioButton_Alarm_Shift.TabIndex = 30;
-            this.radioButton_Alarm_Shift.Text = "整班次";
-            this.radioButton_Alarm_Shift.UseVisualStyleBackColor = true;
-            // 
-            // radioButton_Alarm_Sub
-            // 
-            this.radioButton_Alarm_Sub.AutoSize = true;
-            this.radioButton_Alarm_Sub.Checked = true;
-            this.radioButton_Alarm_Sub.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.radioButton_Alarm_Sub.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.radioButton_Alarm_Sub.Location = new System.Drawing.Point(121, 27);
-            this.radioButton_Alarm_Sub.Name = "radioButton_Alarm_Sub";
-            this.radioButton_Alarm_Sub.Size = new System.Drawing.Size(67, 23);
-            this.radioButton_Alarm_Sub.TabIndex = 31;
-            this.radioButton_Alarm_Sub.TabStop = true;
-            this.radioButton_Alarm_Sub.Text = "分段";
-            this.radioButton_Alarm_Sub.UseVisualStyleBackColor = true;
-            this.radioButton_Alarm_Sub.CheckedChanged += new System.EventHandler(this.radioButton_Alarm_Sub_CheckedChanged);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -438,14 +438,14 @@
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.Resize += new System.EventHandler(this.MainForm_Resize);
             this.panel2.ResumeLayout(false);
+            this.groupBox_Alarm.ResumeLayout(false);
+            this.groupBox_Alarm.PerformLayout();
             this.panel3.ResumeLayout(false);
             this.panel5.ResumeLayout(false);
             this.menu_icon.ResumeLayout(false);
             this.panel6.ResumeLayout(false);
             this.groupBox_Alarm_Btn.ResumeLayout(false);
             this.groupBox_Alarm_Btn.PerformLayout();
-            this.groupBox_Alarm.ResumeLayout(false);
-            this.groupBox_Alarm.PerformLayout();
             this.ResumeLayout(false);
 
         }
