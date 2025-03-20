@@ -1,8 +1,8 @@
-# Slac_DataAnalysis
+﻿# Slac_DataAnalysis
 
-设备数据分析程序：用于分析服务器ClickHouse数据库中采集的点位信息，报警信息，产量、停机信息
+设备数据分析程序：用于分析服务器ClickHouse数据库中采集的点位信息，报警信息，产量、停机信息（开发新模块功能，2、4、8位解析数据）
 
-使用现场：池州骏智
+使用现场：池州骏智、新乡
 
 ## Getting started
 
