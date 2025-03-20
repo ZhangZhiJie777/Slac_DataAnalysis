@@ -402,7 +402,7 @@ namespace Slac_DataAnalysis.FormPage
                             if (isNewVersion && !isAnalyzing)
                             {
                                 // 查询数据库最新报警信息的时间（eventtime）
-                                string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE msg_id >=150 and msg_id <180 ORDER BY eventtime DESC LIMIT 100 ";
+                                string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE eventtime >= '{DateTime.Now.AddHours(-8).Date}' and msg_id >=150 and msg_id <180 ORDER BY eventtime DESC LIMIT 100 ";
                                 string newEventtime = PostResponse(httpClientTimer, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
 
                                 List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
@@ -434,6 +434,8 @@ namespace Slac_DataAnalysis.FormPage
                                     //button2_Click(sender, e);
                                     getTodayAndShift();
                                     isStartExec10 = true;
+
+                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"最新{Eventtime.Count}条数据，大于上一次分析时间31分钟，开始下一次分析");
                                 }
 
                                 Eventtime.Clear();
@@ -481,6 +483,7 @@ namespace Slac_DataAnalysis.FormPage
                         Stopwatch stopwatch = new Stopwatch(); // 耗费总时间
                         stopwatch.Start();
 
+                        AddListStr($"开始分析 {startTime} ~ {endTime} 时间段内数据  @ {DateTime.Now.ToString()}");
                         LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"开始分析{startTime}~{endTime}时间段内数据");
 
                         task16 = Task.Run(() =>
@@ -683,7 +686,7 @@ namespace Slac_DataAnalysis.FormPage
                                 if (isNewVersion)
                                 {
                                     // 查询数据库最新报警信息的时间（eventtime字段）
-                                    string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE msg_id >=150 and msg_id <180 ORDER BY eventtime DESC LIMIT 100 ";
+                                    string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE eventtime >='{DateTime.Now.AddHours(-8).Date}' and msg_id >=150 and msg_id <180 ORDER BY eventtime DESC LIMIT 100 ";
 
                                     string newEventtime = string.Empty;
 

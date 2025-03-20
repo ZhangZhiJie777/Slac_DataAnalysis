@@ -477,7 +477,9 @@ namespace Slac_DataAnalysis
 
             try
             {
-                string ssqlDel = "delete from " + lineID + "_qty where workdate='" + workdate + "' and workshift='" + workshift + "'  and device_id='" + deviceID + "' and msg_id='" + msgID + "'";
+                //string ssqlDel = "delete from " + lineID + "_qty where workdate='" + workdate + "' and workshift='" + workshift + "'  and device_id='" + deviceID + "' and msg_id='" + msgID + "'";
+                string ssqlDel = $"delete from {lineID}_qty where workdate='{workdate}' and workshift='{workshift}' and device_id='{deviceID}'";
+
                 int execCount = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssqlDel);
 
                 /// 对特定的device_id和msg_id，在指定的时间范围内，对每分钟的数据进行分组，并计算每组中经过特定按位异或操作后的数据的最小值
