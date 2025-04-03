@@ -12,6 +12,7 @@ using System.IO;
 using System.Management;
 using System.Threading;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
 
 namespace Slac_DataAnalysis
@@ -21,13 +22,21 @@ namespace Slac_DataAnalysis
         private frm_main_yzyl_bit frm_Main_Yzyl_bit = null; // 报警分析
         private frm_main_yzyl frm_Main_Yzyl = null;         // 统计分析
         private frm_main_yzyl_bit_alarm_btn frm_Main_Yzyl_Bit_Alarm_Btn = null; // 按钮开关分析
+        private frm_main_device_state frm_Main_Device_State = null; // 设备状态分析
 
-        public volatile static string alarm_Model = string.Empty;     // 报警模式
-        public volatile static string alarm_Btn_Model = string.Empty; // 按钮开关模式
+        public volatile static string alarm_Model = string.Empty;        // 报警模式
+        public volatile static string alarm_Btn_Model = string.Empty;    // 按钮开关模式
+        public volatile static string device_State_Model = string.Empty; // 设备状态模式
         private static string line_id = string.Empty; // 线体号
 
         private volatile string lastAnalyseTime;           // 上一个时间段分析开始时间
         private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮开关）
+        private volatile string lastAnalyseTime_Device_State; // 上一个时间段分析开始时间（设备状态）
+
+        private static string Alarm_Permissions;        // 是否启用报警分析
+        private static string Stats_Permissions;        // 是否启用统计分析
+        private static string Alarm_Btn_Permissions;    // 是否启用按钮开关分析
+        private static string Device_State_Permissions; // 是否启用设备状态分析
 
         //private TimedTask _timedTask;
 
@@ -38,7 +47,7 @@ namespace Slac_DataAnalysis
 
         // 存出上次运行时间文件路径
         private static readonly string LastRunFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lastRun.txt");
-
+        
         /// <summary>
         /// 获取数据库配置参数
         /// </summary>
@@ -59,6 +68,18 @@ namespace Slac_DataAnalysis
 
                 // 上一次按钮开关分析时间
                 lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
+
+                // 是否启用报警分析
+                Alarm_Permissions = list.Find(e => e.Name.Trim() == "Alarm_Permissions").Value.Trim();
+
+                // 是否启用统计分析
+                Stats_Permissions = list.Find(e => e.Name.Trim() == "Stats_Permissions").Value.Trim();
+
+                // 是否启用按钮开关分析
+                Alarm_Btn_Permissions = list.Find(e => e.Name.Trim() == "Alarm_Btn_Permissions").Value.Trim();
+
+                // 是否启用设备状态分析
+                Device_State_Permissions = list.Find(e => e.Name.Trim() == "Device_State_Permissions").Value.Trim();
 
             }
             catch (Exception ex)
@@ -131,11 +152,31 @@ namespace Slac_DataAnalysis
                 //Slac_DataMQ2CHModule.UpdateConnectStateEvent += UpdateConnectStateColor;       // MQ2CH订阅更新连接状态事件
                 //Slac_DataMQ2MQModule.UpdateConnectStateEvent += UpdateConnectStateColor;       // MQ2MQ订阅更新连接状态事件
 
-                Btn_Form1_Click_1(null, null);
+                if (Alarm_Permissions.Equals("1"))
+                {
+                    Btn_Form1_Click_1(null, null);
+                }
+                else { panel2.Enabled = false; }
 
-                Btn_Form2_Click_1(null, null);
+                if (Stats_Permissions.Equals("1")) 
+                {
+                    Btn_Form2_Click_1(null, null);
+                }
+                else { panel3.Enabled = false; }
 
-                Btn_Form3_Click(null, null);
+                if (Alarm_Btn_Permissions.Equals("1"))
+                {
+                    Btn_Form3_Click(null, null);
+                }
+                else { panel6.Enabled = false; }                
+
+                if (Device_State_Permissions.Equals("1"))
+                {
+                    btn_Device_State_Click(null, null);
+                }
+                else { panel_Device_State.Enabled = false; }
+                
+                
             }
             catch (Exception ex)
             {
@@ -184,29 +225,33 @@ namespace Slac_DataAnalysis
             double heightPanelMenu = 1 / 2;
 
             int newWidthMenu = (int)((this.ClientSize.Width) * widthPanelMenu) - 10;
-            int newHeightMenu = (int)((this.ClientSize.Height - 30) / 3);
+            int newHeightMenu = (int)((this.ClientSize.Height - 35) / 4);
 
-            panel2.Size = new Size(newWidthMenu, (this.ClientSize.Height - 30) / 3);
+            panel2.Size = new Size(newWidthMenu, newHeightMenu);
             panel2.Location = new Point(5, 10);
 
             panel3.Size = new Size(newWidthMenu, newHeightMenu);
             panel3.Location = new Point(5, panel2.Location.Y + newHeightMenu + 5);
-            //panel4.Size = new Size(newWidthMenu, newHeightMenu);
-            //panel4.Location = new Point(5, panel3.Location.Y + newHeightMenu + 5);
 
             panel6.Size = new Size(newWidthMenu, newHeightMenu);
-            panel6.Location = new Point(5, panel3.Location.Y + newHeightMenu + 5);
+            panel6.Location = new Point(5, panel3.Location.Y + newHeightMenu + 5); 
 
-            groupBox_Alarm.Width=panel2.Width - 10;
+
+            panel_Device_State.Size = new Size(newWidthMenu, newHeightMenu);
+            panel_Device_State.Location = new Point(5, panel6.Location.Y + newHeightMenu + 5);
+
+
+            groupBox_Alarm.Width = panel2.Width - 10;
             groupBox_Alarm.Height = panel2.Height - 10;
-
-            panel5.Width = panel3.Width;
-            panel5.Height = (int)(panel3.Height * 0.8);
-
 
             groupBox_Alarm_Btn.Width = panel6.Width - 10;
             groupBox_Alarm_Btn.Height = panel6.Height - 10;
-            
+
+            groupBox_Stats.Width = panel3.Width - 10;
+            groupBox_Stats.Height = panel3.Height - 10;
+
+            groupBox_Device_State.Width = panel_Device_State.Width - 10;
+            groupBox_Device_State.Height = panel_Device_State.Height - 10;
             #endregion 设置左侧菜单尺寸（按比例自适应）
         }
 
@@ -268,14 +313,14 @@ namespace Slac_DataAnalysis
                     btn_Alarm.Enabled = false;
                 }
 
-                
+
                 #endregion
 
                 frm_Main_Yzyl_bit = new frm_main_yzyl_bit();
                 frm_Main_Yzyl_bit.Show();
                 panel1.Controls.Clear();
                 panel1.Controls.Add(frm_Main_Yzyl_bit);
-                Btn_Form1.BackColor = Color.Green;                
+                Btn_Form1.BackColor = Color.Green;
 
                 frm_Main_Yzyl_bit.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
                 frm_Main_Yzyl_bit.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
@@ -283,7 +328,7 @@ namespace Slac_DataAnalysis
         }
 
         /// <summary>
-        /// 切换页面：线体分析信息
+        /// 切换页面：统计分析
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -302,8 +347,11 @@ namespace Slac_DataAnalysis
                 panel1.Controls.Clear();
                 panel1.Controls.Add(frm_Main_Yzyl);
                 //frm_Main_Yzyl.CloseForm += CloseForm;
-                Btn_Form2.BackColor = Color.Green;
-                panel5.Enabled = true;
+                Btn_Form2.BackColor = Color.Green;                
+
+                dateTimePicker_Stats.Enabled = true;
+                comboBox_Stats.Enabled = true;
+                btn_Stats.Enabled = true;
 
                 frm_Main_Yzyl.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
                 frm_Main_Yzyl.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
@@ -356,7 +404,7 @@ namespace Slac_DataAnalysis
                     btn_Alarm_Btn.Enabled = false;
                 }
 
-                
+
                 #endregion
 
                 frm_Main_Yzyl_Bit_Alarm_Btn = new frm_main_yzyl_bit_alarm_btn();
@@ -367,6 +415,67 @@ namespace Slac_DataAnalysis
 
                 frm_Main_Yzyl_Bit_Alarm_Btn.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
                 frm_Main_Yzyl_Bit_Alarm_Btn.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
+            }
+        }
+
+        /// <summary>
+        /// 切换页面：设备状态分析
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_Device_State_Click(object sender, EventArgs e)
+        {
+            //frm_Main_Device_State
+            if (frm_Main_Device_State != null)
+            {
+                frm_Main_Device_State.Show();
+                panel1.Controls.Clear();
+                panel1.Controls.Add(frm_Main_Device_State);
+            }
+            else
+            {
+                #region 模式确认
+                if (radioButton_Device_State_Sub.Checked)
+                {
+                    device_State_Model = "分段模式";
+                }
+                else { device_State_Model = "整班次模式"; }
+
+                GetParamConfig();
+                DateTime dt;
+                if (!DateTime.TryParse(lastAnalyseTime_Device_State, out dt))
+                {
+                    radioButton_Device_State_Sub.Checked = false;
+                    radioButton_Device_State_Shift.Checked = true;
+                    device_State_Model = "整班次模式";
+                }
+
+                if (radioButton_Device_State_Shift.Checked)
+                {
+                    radioButton_Device_State_Sub.Enabled = false;
+                    dateTimePicker_Device_State.Enabled = true;
+                    comboBox_Device_State.Enabled = true;
+                    btn_Device_State_Start.Enabled = true;
+                }
+                else
+                {
+                    radioButton_Device_State_Shift.Enabled = false;
+                    dateTimePicker_Device_State.Enabled = false;
+                    comboBox_Device_State.Enabled = false;
+                    btn_Device_State_Start.Enabled = false;
+                }
+
+
+                #endregion
+
+                frm_Main_Device_State = new frm_main_device_state();
+                frm_Main_Device_State.Show();
+                panel1.Controls.Clear();
+                panel1.Controls.Add(frm_Main_Device_State);
+                btn_Device_State.BackColor = Color.Green;
+
+                frm_Main_Device_State.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
+                frm_Main_Device_State.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
             }
         }
 
@@ -403,7 +512,7 @@ namespace Slac_DataAnalysis
                             frm_Main_Yzyl_bit = null;
                             Btn_Form1.BackColor = Color.White;
                             Btn_Form1Stop.Enabled = true;
-                            
+
                             dateTimePicker_Alarm.Enabled = false;
                             comboBox_Alarm.Enabled = false;
                             btn_Alarm.Enabled = false;
@@ -451,7 +560,11 @@ namespace Slac_DataAnalysis
                             frm_Main_Yzyl = null;
                             Btn_Form2.BackColor = Color.White;
                             Btn_Form2Stop.Enabled = true;
-                            panel5.Enabled = false;
+
+                            dateTimePicker_Stats.Enabled = false;
+                            comboBox_Stats.Enabled = false;
+                            btn_Stats.Enabled = false;
+                            
                         }));
 
                         //await Task.Run(() =>
@@ -518,6 +631,55 @@ namespace Slac_DataAnalysis
         }
 
         /// <summary>
+        /// 关闭设备状态分析页面
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_Device_State_Stop_Click(object sender, EventArgs e)
+        {
+            if (frm_Main_Device_State != null)
+            {
+                bool result = false;
+                this.Invoke(new Action(() =>
+                {
+                    if (MessageBox.Show(this, "确定要关闭设备状态分析吗？", "提示", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                    {
+                        result = true;
+                    }
+                }));
+
+                if (result)
+                {
+                    try
+                    {
+                        // 禁用按钮，防止多次点击
+                        btn_Device_State_Stop.Enabled = false;
+
+                        this.BeginInvoke(new Action(() =>
+                        {
+                            frm_Main_Device_State.StopService(); // 关闭服务（关闭定时器，解析线程）                            
+                            frm_Main_Device_State.Dispose();
+                            frm_Main_Device_State = null;
+                            btn_Device_State.BackColor = Color.White;
+                            btn_Device_State_Stop.Enabled = true;
+
+                            dateTimePicker_Device_State.Enabled = false;
+                            comboBox_Device_State.Enabled = false;
+                            btn_Device_State_Start.Enabled = false;
+
+                            radioButton_Device_State_Shift.Enabled = true;
+                            radioButton_Device_State_Sub.Enabled = true;
+                        }));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// 获取界面设置信息
         /// </summary>
         /// <param name="type"></param>
@@ -560,6 +722,16 @@ namespace Slac_DataAnalysis
 
                             case "按钮开关分析班次":
                                 obj = comboBox_Alarm_Btn.Text;
+                                obj = obj.ToString();
+                                break;
+
+                            case "设备状态分析时间":
+                                obj = dateTimePicker_Device_State.Value;
+                                obj = (DateTime)obj;
+                                break;
+
+                            case "设备状态分析班次":
+                                obj = comboBox_Device_State.Text;
                                 obj = obj.ToString();
                                 break;
 
@@ -615,6 +787,14 @@ namespace Slac_DataAnalysis
 
                             case "按钮开关分析班次":
                                 comboBox_Alarm_Btn.Text = obj.ToString();
+                                break;
+
+                            case "设备状态分析时间":
+                                dateTimePicker_Device_State.Value = Convert.ToDateTime(obj);
+                                break;
+
+                            case "设备状态分析班次":
+                                comboBox_Device_State.Text = obj.ToString();
                                 break;
 
                             default:
@@ -773,6 +953,7 @@ namespace Slac_DataAnalysis
             Btn_Form1Stop_Click(null, null); // 关闭报警分析
             Btn_Form2Stop_Click(null, null); // 关闭统计分析
             Btn_Form3Stop_Click(null, null); // 关闭按钮开关分析
+            btn_Device_State_Stop_Click(null, null); // 关闭设备状态分析
 
             this.Dispose();
             this.Close();   // 手动关闭窗体会重新触发FormClosing事件，所以需要添加标志变量isFormClosing来避免重复关闭窗体
@@ -820,7 +1001,20 @@ namespace Slac_DataAnalysis
                 frm_Main_Yzyl_Bit_Alarm_Btn.button2_Click(null, null); // 开启按钮开关分析
             }
         }
-        
+
+        /// <summary>
+        /// 设备状态分析
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_Device_State_Start_Click(object sender, EventArgs e)
+        {
+            if (frm_Main_Device_State != null)
+            {
+                frm_Main_Device_State.button2_Click(null, null); // 开启设备状态分析
+            }
+        }
+
         /// <summary>
         /// 按钮开关分析模式选择——分段模式
         /// </summary>
@@ -837,7 +1031,7 @@ namespace Slac_DataAnalysis
                 {
                     radioButton_Alarm_Btn_Sub.Checked = false;
                     radioButton_Alarm_Btn_Shift.Checked = true;
-                    MessageBox.Show(this,"按钮开关分析：无法选择分析模式，请正确配置数据库上一次分析时间戳", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, "按钮开关分析：无法选择分析模式，请正确配置数据库上一次分析时间戳", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
 
@@ -869,5 +1063,7 @@ namespace Slac_DataAnalysis
                 }
             }
         }
+
+        
     }
 }

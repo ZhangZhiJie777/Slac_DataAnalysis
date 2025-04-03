@@ -545,8 +545,6 @@ namespace Slac_DataAnalysis
 
                     AddListStr(workdate + " & " + workshift + " & " + deviceID + "产量统计完成！ " + DateTime.Now.ToString());
 
-
-
                 }
 
 
@@ -1310,7 +1308,7 @@ namespace Slac_DataAnalysis
             //listBox1.Height = this.Height - (comboBox1.Height + comboBox1.Location.Y) - 20;
             //listBox1.Location = new Point(10, comboBox1.Location.Y + comboBox1.Height + 20);
 
-            label1.Location = new Point(10, 10);
+            label1.Location = new Point(listBox1.Width / 3, 10);
             checkBox_Stats.Location = new Point(this.Width - 15 - checkBox_Stats.Width, 10);
 
             listBox1.Height = this.Height - (checkBox_Stats.Height + checkBox_Stats.Location.Y);

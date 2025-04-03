@@ -786,7 +786,7 @@ namespace Slac_DataAnalysis_Bit
                                     DateTime ds, de;
                                     DateTime.TryParse(startTime, out ds);
                                     DateTime.TryParse(endTime, out de);
-                                    DateTime nowTime = DateTime.Now.ToUniversalTime().AddMinutes(30); // 当前UTC时间+30分钟
+                                    DateTime nowTime = DateTime.Now.ToUniversalTime(); // 当前UTC时间+30分钟
                                     if (de < nowTime)
                                     {
                                         LogConfig.Intence.WriteLog("RunLog", "Alarm", $"前startTime：{startTime}，前endTime：{endTime} 后startTime：{ds.AddHours(12).ToString()}，后endTime：{de.AddHours(12).ToString()}");
@@ -1399,7 +1399,7 @@ namespace Slac_DataAnalysis_Bit
             //listBox1.Height = this.Height - (comboBox1.Height + comboBox1.Location.Y) - 20;
             //listBox1.Location = new Point(10, comboBox1.Location.Y + comboBox1.Height + 20);
 
-            label1.Location = new Point(10, 10);
+            label1.Location = new Point(listBox1.Width / 3, 10);
             checkBox_Alarm.Location = new Point(this.Width - 15 - checkBox_Alarm.Width, 10);
 
             listBox1.Height = this.Height - (checkBox_Alarm.Height + checkBox_Alarm.Location.Y);

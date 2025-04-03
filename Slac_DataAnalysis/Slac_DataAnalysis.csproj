@@ -77,11 +77,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\AnalysisByBit.cs" />
     <Compile Include="Common\ConfigHelper.cs" />
     <Compile Include="Common\LogConfig.cs" />
     <Compile Include="DatabaseSql\DBModel\DBSystemConfig.cs" />
     <Compile Include="DatabaseSql\DBOper\DBOper.cs" />
     <Compile Include="DatabaseSql\DBOper\MySqlOper.cs" />
+    <Compile Include="FormPage\frm_main_device_state.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FormPage\frm_main_device_state.Designer.cs">
+      <DependentUpon>frm_main_device_state.cs</DependentUpon>
+    </Compile>
     <Compile Include="FormPage\frm_main_yzyl.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -108,6 +115,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="FormPage\frm_main_device_state.resx">
+      <DependentUpon>frm_main_device_state.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormPage\frm_main_yzyl.resx">
       <DependentUpon>frm_main_yzyl.cs</DependentUpon>
     </EmbeddedResource>
