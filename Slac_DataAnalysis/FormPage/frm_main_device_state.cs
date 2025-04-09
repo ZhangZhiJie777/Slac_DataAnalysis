@@ -330,7 +330,7 @@ namespace Slac_DataAnalysis.FormPage
 
                         #region 获取 msglist_report配置表：虚拟线体号、线体号、虚拟设备号、设备号、报警信息msg_id集合
                         // 查询看板服务器数据库上面的 msglist_report 表，获取所有设备信息
-                        string ssql = "	select from_line_id,line_id,from_device_id,device_id,alarm_msg_id,device_analysis_bit,qty_msg_id,type,bit_type,status_a_msg_id,status_a_bit_id,status_b_msg_id,status_b_bit_id from msglist_report_yibinxianlai where from_line_id='" + line_id + "'";
+                        string ssql = "	select from_line_id,line_id,from_device_id,device_id,alarm_msg_id,device_analysis_bit,qty_msg_id,type,bit_type,status_a_msg_id,status_a_bit_id,status_b_msg_id,status_b_bit_id from msglist_report_new where from_line_id='" + line_id + "'";
                         msglist_rpt = ConfigHelper.GetDataSet(Conn_battery, CommandType.Text, ssql);
                         DataTable dt_msglist = msglist_rpt.Tables[0];
                         LogConfig.Intence.WriteLog("RunLog\\Device_State", "Device_State", $"开始设备状态分析，查询msglist_report表行数：{dt_msglist.Rows.Count}");

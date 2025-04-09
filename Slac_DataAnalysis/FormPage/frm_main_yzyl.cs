@@ -204,7 +204,7 @@ namespace Slac_DataAnalysis
                     try
                     {
                         // 查询看板服务器数据库上面的 msglist_report 表，获取所有设备信息
-                        string ssql = "	select from_device_id,device_id,qty_msg_id,type,bit_type,status_a_msg_id,status_a_bit_id,status_b_msg_id,status_b_bit_id from msglist_report where line_id='" + line_id + "'";
+                        string ssql = "	select from_device_id,device_id,qty_msg_id,type,bit_type,status_a_msg_id,status_a_bit_id,status_b_msg_id,status_b_bit_id from msglist_report_new where line_id='" + line_id + "'";
                         msglist_rpt = ConfigHelper.GetDataSet(Conn_battery, CommandType.Text, ssql);
                         DataTable dt_msglist = msglist_rpt.Tables[0];
                         LogConfig.Intence.WriteLog("RunLog", "Stats", $"开始统计分析，查询msglist_report表行数：{dt_msglist.Rows.Count}");
