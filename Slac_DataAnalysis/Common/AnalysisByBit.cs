@@ -19,7 +19,6 @@ namespace Slac_DataAnalysis.Common
             List<int> list = new List<int>(); // 存储解析后的数据
             try
             {
-                // 读取的原始数据data 
                 if (int.TryParse(data, out int result))
                 {
                     // 二进制字符串
