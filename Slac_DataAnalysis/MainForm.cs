@@ -69,6 +69,9 @@ namespace Slac_DataAnalysis
                 // 上一次按钮开关分析时间
                 lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
 
+                // 上一次设备状态分析时间
+                lastAnalyseTime_Device_State = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Device_State").Value.Trim();
+
                 // 是否启用报警分析
                 Alarm_Permissions = list.Find(e => e.Name.Trim() == "Alarm_Permissions").Value.Trim();
 
@@ -1064,6 +1067,25 @@ namespace Slac_DataAnalysis
             }
         }
 
-        
+        /// <summary>
+        /// 设备状态分析模式选择——分段模式
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void radioButton_Device_State_Sub_CheckedChanged(object sender, EventArgs e)
+        {
+            // 选择分段模式，需要判断数据库该配置字段数据是否是正确的时间数据
+            if (radioButton_Device_State_Sub.Checked)
+            {
+                GetParamConfig();
+                DateTime dt;
+                if (!DateTime.TryParse(lastAnalyseTime_Device_State, out dt))
+                {
+                    radioButton_Device_State_Sub.Checked = false;
+                    radioButton_Device_State_Shift.Checked = true;
+                    MessageBox.Show(this, "报警分析：无法选择分析模式，请正确配置数据库上一次分析时间戳", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
     }
 }

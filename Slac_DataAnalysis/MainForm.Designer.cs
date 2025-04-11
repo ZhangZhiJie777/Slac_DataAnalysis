@@ -41,11 +41,13 @@
             this.radioButton_Alarm_Shift = new System.Windows.Forms.RadioButton();
             this.Btn_Form1 = new System.Windows.Forms.Button();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.groupBox_Stats = new System.Windows.Forms.GroupBox();
+            this.radioButton_Stats = new System.Windows.Forms.RadioButton();
             this.btn_Stats = new System.Windows.Forms.Button();
+            this.Btn_Form2 = new System.Windows.Forms.Button();
+            this.Btn_Form2Stop = new System.Windows.Forms.Button();
             this.comboBox_Stats = new System.Windows.Forms.ComboBox();
             this.dateTimePicker_Stats = new System.Windows.Forms.DateTimePicker();
-            this.Btn_Form2Stop = new System.Windows.Forms.Button();
-            this.Btn_Form2 = new System.Windows.Forms.Button();
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.menu_icon = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.btn_show = new System.Windows.Forms.ToolStripMenuItem();
@@ -69,18 +71,16 @@
             this.dateTimePicker_Device_State = new System.Windows.Forms.DateTimePicker();
             this.radioButton_Device_State_Sub = new System.Windows.Forms.RadioButton();
             this.radioButton_Device_State_Shift = new System.Windows.Forms.RadioButton();
-            this.groupBox_Stats = new System.Windows.Forms.GroupBox();
             this.backgroundWorker2 = new System.ComponentModel.BackgroundWorker();
-            this.radioButton_Stats = new System.Windows.Forms.RadioButton();
             this.panel2.SuspendLayout();
             this.groupBox_Alarm.SuspendLayout();
             this.panel3.SuspendLayout();
+            this.groupBox_Stats.SuspendLayout();
             this.menu_icon.SuspendLayout();
             this.panel6.SuspendLayout();
             this.groupBox_Alarm_Btn.SuspendLayout();
             this.panel_Device_State.SuspendLayout();
             this.groupBox_Device_State.SuspendLayout();
-            this.groupBox_Stats.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
@@ -213,6 +213,35 @@
             this.panel3.Size = new System.Drawing.Size(241, 175);
             this.panel3.TabIndex = 2;
             // 
+            // groupBox_Stats
+            // 
+            this.groupBox_Stats.Controls.Add(this.radioButton_Stats);
+            this.groupBox_Stats.Controls.Add(this.btn_Stats);
+            this.groupBox_Stats.Controls.Add(this.Btn_Form2);
+            this.groupBox_Stats.Controls.Add(this.Btn_Form2Stop);
+            this.groupBox_Stats.Controls.Add(this.comboBox_Stats);
+            this.groupBox_Stats.Controls.Add(this.dateTimePicker_Stats);
+            this.groupBox_Stats.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.groupBox_Stats.Location = new System.Drawing.Point(4, 3);
+            this.groupBox_Stats.Name = "groupBox_Stats";
+            this.groupBox_Stats.Size = new System.Drawing.Size(230, 164);
+            this.groupBox_Stats.TabIndex = 32;
+            this.groupBox_Stats.TabStop = false;
+            this.groupBox_Stats.Text = "统计分析模块";
+            // 
+            // radioButton_Stats
+            // 
+            this.radioButton_Stats.AutoSize = true;
+            this.radioButton_Stats.Checked = true;
+            this.radioButton_Stats.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.radioButton_Stats.Location = new System.Drawing.Point(17, 27);
+            this.radioButton_Stats.Name = "radioButton_Stats";
+            this.radioButton_Stats.Size = new System.Drawing.Size(87, 23);
+            this.radioButton_Stats.TabIndex = 32;
+            this.radioButton_Stats.TabStop = true;
+            this.radioButton_Stats.Text = "整班次";
+            this.radioButton_Stats.UseVisualStyleBackColor = true;
+            // 
             // btn_Stats
             // 
             this.btn_Stats.BackColor = System.Drawing.Color.White;
@@ -224,6 +253,30 @@
             this.btn_Stats.Text = "开始";
             this.btn_Stats.UseVisualStyleBackColor = false;
             this.btn_Stats.Click += new System.EventHandler(this.btn_Stats_Click);
+            // 
+            // Btn_Form2
+            // 
+            this.Btn_Form2.BackColor = System.Drawing.Color.White;
+            this.Btn_Form2.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.Btn_Form2.Location = new System.Drawing.Point(6, 56);
+            this.Btn_Form2.Name = "Btn_Form2";
+            this.Btn_Form2.Size = new System.Drawing.Size(138, 29);
+            this.Btn_Form2.TabIndex = 2;
+            this.Btn_Form2.Text = "统计信息分析";
+            this.Btn_Form2.UseVisualStyleBackColor = false;
+            this.Btn_Form2.Click += new System.EventHandler(this.Btn_Form2_Click_1);
+            // 
+            // Btn_Form2Stop
+            // 
+            this.Btn_Form2Stop.BackColor = System.Drawing.Color.White;
+            this.Btn_Form2Stop.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.Btn_Form2Stop.Location = new System.Drawing.Point(157, 56);
+            this.Btn_Form2Stop.Name = "Btn_Form2Stop";
+            this.Btn_Form2Stop.Size = new System.Drawing.Size(67, 29);
+            this.Btn_Form2Stop.TabIndex = 6;
+            this.Btn_Form2Stop.Text = "停止";
+            this.Btn_Form2Stop.UseVisualStyleBackColor = false;
+            this.Btn_Form2Stop.Click += new System.EventHandler(this.Btn_Form2Stop_Click);
             // 
             // comboBox_Stats
             // 
@@ -248,30 +301,6 @@
             this.dateTimePicker_Stats.Name = "dateTimePicker_Stats";
             this.dateTimePicker_Stats.Size = new System.Drawing.Size(138, 29);
             this.dateTimePicker_Stats.TabIndex = 27;
-            // 
-            // Btn_Form2Stop
-            // 
-            this.Btn_Form2Stop.BackColor = System.Drawing.Color.White;
-            this.Btn_Form2Stop.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.Btn_Form2Stop.Location = new System.Drawing.Point(157, 56);
-            this.Btn_Form2Stop.Name = "Btn_Form2Stop";
-            this.Btn_Form2Stop.Size = new System.Drawing.Size(67, 29);
-            this.Btn_Form2Stop.TabIndex = 6;
-            this.Btn_Form2Stop.Text = "停止";
-            this.Btn_Form2Stop.UseVisualStyleBackColor = false;
-            this.Btn_Form2Stop.Click += new System.EventHandler(this.Btn_Form2Stop_Click);
-            // 
-            // Btn_Form2
-            // 
-            this.Btn_Form2.BackColor = System.Drawing.Color.White;
-            this.Btn_Form2.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.Btn_Form2.Location = new System.Drawing.Point(6, 56);
-            this.Btn_Form2.Name = "Btn_Form2";
-            this.Btn_Form2.Size = new System.Drawing.Size(138, 29);
-            this.Btn_Form2.TabIndex = 2;
-            this.Btn_Form2.Text = "统计信息分析";
-            this.Btn_Form2.UseVisualStyleBackColor = false;
-            this.Btn_Form2.Click += new System.EventHandler(this.Btn_Form2_Click_1);
             // 
             // notifyIcon1
             // 
@@ -520,6 +549,7 @@
             this.radioButton_Device_State_Sub.TabStop = true;
             this.radioButton_Device_State_Sub.Text = "分段";
             this.radioButton_Device_State_Sub.UseVisualStyleBackColor = true;
+            this.radioButton_Device_State_Sub.CheckedChanged += new System.EventHandler(this.radioButton_Device_State_Sub_CheckedChanged);
             // 
             // radioButton_Device_State_Shift
             // 
@@ -531,35 +561,6 @@
             this.radioButton_Device_State_Shift.TabIndex = 29;
             this.radioButton_Device_State_Shift.Text = "整班次";
             this.radioButton_Device_State_Shift.UseVisualStyleBackColor = true;
-            // 
-            // groupBox_Stats
-            // 
-            this.groupBox_Stats.Controls.Add(this.radioButton_Stats);
-            this.groupBox_Stats.Controls.Add(this.btn_Stats);
-            this.groupBox_Stats.Controls.Add(this.Btn_Form2);
-            this.groupBox_Stats.Controls.Add(this.Btn_Form2Stop);
-            this.groupBox_Stats.Controls.Add(this.comboBox_Stats);
-            this.groupBox_Stats.Controls.Add(this.dateTimePicker_Stats);
-            this.groupBox_Stats.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.groupBox_Stats.Location = new System.Drawing.Point(4, 3);
-            this.groupBox_Stats.Name = "groupBox_Stats";
-            this.groupBox_Stats.Size = new System.Drawing.Size(230, 164);
-            this.groupBox_Stats.TabIndex = 32;
-            this.groupBox_Stats.TabStop = false;
-            this.groupBox_Stats.Text = "统计分析模块";
-            // 
-            // radioButton_Stats
-            // 
-            this.radioButton_Stats.AutoSize = true;
-            this.radioButton_Stats.Checked = true;
-            this.radioButton_Stats.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.radioButton_Stats.Location = new System.Drawing.Point(17, 27);
-            this.radioButton_Stats.Name = "radioButton_Stats";
-            this.radioButton_Stats.Size = new System.Drawing.Size(87, 23);
-            this.radioButton_Stats.TabIndex = 32;
-            this.radioButton_Stats.TabStop = true;
-            this.radioButton_Stats.Text = "整班次";
-            this.radioButton_Stats.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
@@ -583,6 +584,8 @@
             this.groupBox_Alarm.ResumeLayout(false);
             this.groupBox_Alarm.PerformLayout();
             this.panel3.ResumeLayout(false);
+            this.groupBox_Stats.ResumeLayout(false);
+            this.groupBox_Stats.PerformLayout();
             this.menu_icon.ResumeLayout(false);
             this.panel6.ResumeLayout(false);
             this.groupBox_Alarm_Btn.ResumeLayout(false);
@@ -590,8 +593,6 @@
             this.panel_Device_State.ResumeLayout(false);
             this.groupBox_Device_State.ResumeLayout(false);
             this.groupBox_Device_State.PerformLayout();
-            this.groupBox_Stats.ResumeLayout(false);
-            this.groupBox_Stats.PerformLayout();
             this.ResumeLayout(false);
 
         }

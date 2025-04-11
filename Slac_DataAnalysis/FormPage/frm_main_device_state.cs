@@ -553,6 +553,10 @@ namespace Slac_DataAnalysis.FormPage
             watch.Start();
             try
             {
+                //测试
+                Stopwatch sc = new Stopwatch();
+                sc.Start();
+
                 RedisClient client = new RedisClient(RedisServer, RedisPort);
                 client.Password = RedisPasswd;    //密码 //测试
                 //client.Password = "slac1028";   //密码
@@ -626,6 +630,11 @@ namespace Slac_DataAnalysis.FormPage
 
 
                     int[] valueChange = new int[4] { 0, 0, 0, 0 }; // 记录设备状态msgID变化次数（每个msgID都有四个数据）
+
+                    LogConfig.Intence.WriteLog("RunLog\\Device_State", $"Device_State{deviceID}", $"分析 {startTime}~{endTime} 时间段内，设备号{deviceID}，msgID {msgID} 查询数据数量：{strArray.Count()}");
+
+                    sc.Stop();
+                    LogConfig.Intence.WriteLog("RunLog\\Device_State", $"Device_State{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环遍历数据前查询耗时：{sc.ElapsedMilliseconds}");
 
                     for (int i = 0; i < strArray.Count(); i++)
                     {
