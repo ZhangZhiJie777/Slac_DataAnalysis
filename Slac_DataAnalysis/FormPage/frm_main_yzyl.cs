@@ -19,6 +19,9 @@ using Slac_DataAnalysis.DatabaseSql.DBModel;
 using Slac_DataAnalysis.DatabaseSql.DBOper;
 using System.Data.SqlTypes;
 using System.Reflection.Emit;
+using System.Runtime.Remoting.Lifetime;
+using System.Globalization;
+using System.Security.Policy;
 
 namespace Slac_DataAnalysis
 {
@@ -178,13 +181,13 @@ namespace Slac_DataAnalysis
                 if (shift == "白班"/*comboBox1.Text == "白班"*/)
                 {
                     startTime = workdate + " 00:00:00";
-                    endTime = workdate + " 12:01:00";
+                    endTime = workdate + " 12:00:00";
                     workshift = "1";
                 }
                 else
                 {
                     startTime = workdate + " 12:00:00";
-                    endTime = Convert.ToDateTime(workdate).AddDays(1).ToString("yyyy-MM-dd") + " 00:01:00";
+                    endTime = Convert.ToDateTime(workdate).AddDays(1).ToString("yyyy-MM-dd") + " 00:00:00";
                     workshift = "0";
                 }
             }));
@@ -219,15 +222,15 @@ namespace Slac_DataAnalysis
 
                             string device_id = dr_msg["from_device_id"].ToString();
 
-                            //统计产量 //getQtyFromCHbyMinute(line_id, "10", "10", "3009");
+                            // 统计产量 //getQtyFromCHbyMinute(line_id, "10", "10", "3009");
                             getQtyFromCHbyMinute(line_id, dr_msg["from_device_id"].ToString(), dr_msg["device_id"].ToString(), dr_msg["qty_msg_id"].ToString());
 
                             LogConfig.Intence.WriteLog("RunLog", "Stats", $"统计分析{startTime}~{endTime}时间段内数据 设备号{device_id} 产量统计分析完成");
 
-                            //计算停机信息  //getStopValueFromCH(line_id, "10", "10","201","25");
+                            // 计算停机信息  //getStopValueFromCH(line_id, "10", "10","201","25");
                             if (dr_msg["type"].ToString() == "a")
                             {
-                                getStopValueFromCH(line_id, dr_msg["from_device_id"].ToString(), dr_msg["device_id"].ToString(), dr_msg["status_a_msg_id"].ToString(), dr_msg["status_a_bit_id"].ToString());
+                                getStopValueFromCH_New(line_id, dr_msg["from_device_id"].ToString(), dr_msg["device_id"].ToString(), dr_msg["status_a_msg_id"].ToString(), dr_msg["status_a_bit_id"].ToString());
                             }
                             else if (dr_msg["type"].ToString() == "ab")
                             {    //getStopValueFromCH(line_id, "12", "12","1250","0","1250","2");
@@ -235,7 +238,7 @@ namespace Slac_DataAnalysis
                             }
                             LogConfig.Intence.WriteLog("RunLog", "Stats", $"统计分析{startTime}~{endTime}时间段内数据 设备号{device_id} 计算停机信息完成");
 
-                            //按小时统计停机   //getStopMinuteByHours(line_id, "20", "206.16");
+                            // 按小时统计停机   //getStopMinuteByHours(line_id, "20", "206.16");
                             getStopMinuteByHours(line_id, dr_msg["device_id"].ToString(), dr_msg["status_a_msg_id"].ToString() + "." + dr_msg["status_a_bit_id"].ToString());
 
                             LogConfig.Intence.WriteLog("RunLog", "Stats", $"统计分析{startTime}~{endTime}时间段内数据 设备号{device_id} 按小时统计停机完成");
@@ -375,10 +378,10 @@ namespace Slac_DataAnalysis
                     {
                         // 忽略中止线程异常（关闭时，直接中止线程会抛出 ThreadAbortException异常）
                     }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         isAnalyzing = false;
-                        System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + "_error10.log", ex.ToString() + DateTime.Now.ToString() + "\r\n"); 
+                        System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + "_error10.log", ex.ToString() + DateTime.Now.ToString() + "\r\n");
                     }
                 }
                 else
@@ -691,6 +694,280 @@ namespace Slac_DataAnalysis
                 System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd_") + "SQL.log", SqlString.ToString() + DateTime.Now.ToString() + "\r\n");
             }
         }
+
+        /// <summary>
+        /// 获取更新state表的sql
+        /// </summary>
+        /// <param name="lineID"></param>
+        /// <param name="deviceID"></param>
+        /// <param name="msgID"></param>
+        /// <param name="strBit"></param>
+        /// <param name="lastState"></param>
+        /// <param name="nowState"></param>
+        /// <returns></returns>
+        private string GetDeviceStateSqlStr(string lineID, string deviceID, string msgID, DateTime nowTime, MachineStatus lastState, MachineStatus nowState)
+        {
+            int lastBit = (int)lastState; // 上次状态,对应点位的位
+            int nowBit = (int)nowState;   // 当前状态,对应点位的位                        
+
+            double diffv = (nowTime - Convert.ToDateTime(lastTime)).TotalSeconds; // 持续时间
+
+            StringBuilder sqlPartStr = new StringBuilder("");
+
+
+            // 更新上一个点位变化状态
+            sqlPartStr.Append(
+                $"('{workdate}','{workshift}','{lineID}','{deviceID}','{msgID}.{lastBit}'," +
+                $"'{lastBit}','{0}','{1}','{diffv}'," +
+                $"'{nowTime:yyyy-MM-dd HH:mm:ss.fff}','{lastTime:yyyy-MM-dd HH:mm:ss.fff}',now()),"
+                );
+
+            // 更新当前点位变化状态
+            sqlPartStr.Append(
+                 $"('{workdate}','{workshift}','{lineID}','{deviceID}','{msgID}.{nowBit}'," +
+                 $"'{3}','{1}','{0}','{diffv}'," +
+                 $"'{nowTime:yyyy-MM-dd HH:mm:ss.fff}','{lastTime:yyyy-MM-dd HH:mm:ss.fff}',now()),"
+                );
+
+            return sqlPartStr.ToString();
+        }
+
+        /// <summary>
+        /// 计算停机信息_新
+        /// </summary>
+        /// <param name="lineID"></param>
+        /// <param name="deviceID"></param>
+        /// <param name="FromdeviceID"></param>
+        /// <param name="msgID"></param>
+        /// <param name="msgBit"></param>
+        private void getStopValueFromCH_New(string lineID, string deviceID, string FromdeviceID, string msgID, string msgBit)
+        {
+            if (cts.Token.IsCancellationRequested) { return; }
+
+            //2.14  计算停机信息
+            //Stopwatch watch = new Stopwatch();
+            //watch.Start();
+
+            // getTodayAndShift();
+
+            StringBuilder SqlString = new StringBuilder("");
+            try
+            {
+                // 前后各延长一分钟，处理跨班的设备状态
+                string startTimeSubtractOneMinute = Convert.ToDateTime(startTime).AddMinutes(-1).ToString();
+                string endTimeAddOneMinute = Convert.ToDateTime(endTime).AddMinutes(1).ToString();
+
+                string sqlhead = "insert into " + lineID + "_state (workdate,workshift,line_id,device_id,msg_id,state_label,pv,lpv,diffv,pt,lpt,indate) values ";
+                SqlString = new StringBuilder(sqlhead);
+                int Lcount = 0;
+
+                string ssqlDel = "delete from " + lineID + "_state where workdate='" + workdate + "' and workshift='" + workshift + "'  and device_id='" + deviceID + "'";
+                int execCount = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssqlDel);
+
+                string ssql = $"SELECT eventtime," +
+                              $"bitTest(bitXor(`data`, 1768515945 - device_id * msg_id), {msgBit}) AS bit_0, " +
+                              $"bitTest(bitXor(`data`, 1768515945 - device_id * msg_id), {1}) AS bit_1, " +
+                              $"bitTest(bitXor(`data`, 1768515945 - device_id * msg_id), {2}) AS bit_2 " +
+                              $"FROM {companyNum}.{lineID}{CHtable_name} l " +
+                              $"WHERE eventtime >= '{startTimeSubtractOneMinute}' AND eventtime < '{endTimeAddOneMinute}' " +
+                              $"AND device_id = {FromdeviceID} AND msg_id = {msgID} " +
+                              $"ORDER BY eventtime";
+
+                byte[] postData = Encoding.ASCII.GetBytes(ssql.ToString());
+                string strResult = PostResponse(CHuser, CHpasswd, $"http://{CHserver}:8123/", ssql.ToString());
+                if (strResult != "")
+                {
+                    strResult = strResult.Remove(strResult.Count() - 1, 1);
+                    string[] strArray = strResult.Split('\n');
+
+                    MachineStatus machineStatus = MachineStatus.None; // 默认状态
+                    int bitRunValue;     // 运行点位值
+                    int bitStopValue;    // 故障停机点位值
+                    int bitStandbyValue; // 待机点位值
+
+                    // 初始化lastTime,为开始时间的前一分钟，不属于当班次时间
+                    lastTime = Convert.ToDateTime(startTime).AddMinutes(-1);
+
+                    // 找出当前时间段中，三个点位存在为1的第一个时间点数据，作为上一次数据
+                    foreach (string str in strArray)
+                    {
+                        if (cts.Token.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        string[] bitValue = str.Split('\t');
+
+                        if (bitValue[1].Equals("1") || bitValue[2].Equals("1") || bitValue[3].Equals("1"))
+                        {                            
+                            bitRunValue = Convert.ToInt32(bitValue[1]);
+                            bitStopValue = Convert.ToInt32(bitValue[2]);
+                            bitStandbyValue = Convert.ToInt32(bitValue[3]);
+
+                            /*
+                             * 判断哪个为1，赋予对应枚举值（顺序可调整）
+                             * 如果可能同时有多个值为 1，这里默认按优先顺序：Run > Stop > Standby；                             
+                            */
+                            if (bitRunValue == 1)
+                            {
+                                machineStatus = MachineStatus.Run;
+                            }
+                            else if (bitStopValue == 1)
+                            {
+                                machineStatus = MachineStatus.Stop;
+                            }
+                            else if (bitStandbyValue == 1)
+                            {
+                                machineStatus = MachineStatus.Standby;
+                            }
+
+
+                            #region 跨班次数据处理—开始时间
+                            if (Convert.ToDateTime(bitValue[0]) <= Convert.ToDateTime(startTime))
+                            {
+                                // 遍历开始时间前一分钟内最接近开始时间之前的数据，时间设为开始时间
+                                lastTime = Convert.ToDateTime(startTime);
+                            }
+                            else
+                            {
+                                // 遍历到开始时间之后的数据，如果lastTime!=开始时间
+                                // 表示前一分钟没有遍历到数据，将lastTime设为当前数据时间
+                                if (lastTime != Convert.ToDateTime(startTime))
+                                {
+                                    lastTime = DateTime.ParseExact(bitValue[0], "yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
+                                }
+
+                                break; // 确定第一个数据，跳出循环
+                            }  
+
+                            #endregion
+                        }
+                        
+                    }
+
+                    // 遍历所有数据，计算每个状态持续时间
+                    for (int i = 1; i < strArray.Count(); i++)
+                    {
+                        if (cts.Token.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        string[] strBit = strArray[i].Split('\t');                        
+
+                        DateTime nowTime = Convert.ToDateTime(strBit[0]);                        
+
+                        #region 跨班次数据处理——结束时间
+                        if (Convert.ToDateTime(strBit[0]) <= Convert.ToDateTime(startTime))
+                        {
+                            continue; // 不属于当班次的数据，跳过
+                        }
+
+                        if (Convert.ToDateTime(strBit[0]) >= Convert.ToDateTime(endTime))
+                        {
+                            // 遍历结束时间后一分钟内最接近结束时间之后的数据，时间设为结束时间
+                            nowTime = Convert.ToDateTime(endTime);
+                        }
+
+                        #endregion
+
+                        int nowRunValue = Convert.ToInt32(strBit[1]);     // 当前运行点位值
+                        int nowStopValue = Convert.ToInt32(strBit[2]);    // 当前故障停机点位值
+                        int nowStandbyValue = Convert.ToInt32(strBit[3]); // 当前待机点位值
+
+                        // 判断当前各个状态哪个为1，且不是上一个状态
+                        // 则更新状态，并记录状态变化时间，更新数据，更新当前所处状态
+                        // 每次插入的是两条数据，一条是上一个状态，一条是当前状态
+                        if (nowRunValue == 1 && machineStatus != MachineStatus.Run)
+                        {
+                            string sql = GetDeviceStateSqlStr(lineID, deviceID, msgID, nowTime, machineStatus, MachineStatus.Run);
+                            SqlString.Append(sql);
+                            Lcount += 2;
+
+                            lastTime = nowTime;
+                            machineStatus = MachineStatus.Run;
+                        }
+                        else if (nowStopValue == 1 && machineStatus != MachineStatus.Stop)
+                        {
+                            string sql = GetDeviceStateSqlStr(lineID, deviceID, msgID, nowTime, machineStatus, MachineStatus.Stop);
+                            SqlString.Append(sql);
+                            Lcount += 2;
+
+                            lastTime = nowTime;
+                            machineStatus = MachineStatus.Stop;
+                        }
+                        else if (nowStandbyValue == 1 && machineStatus != MachineStatus.Standby)
+                        {
+                            string sql = GetDeviceStateSqlStr(lineID, deviceID, msgID, nowTime, machineStatus, MachineStatus.Standby);
+                            SqlString.Append(sql);
+                            Lcount += 2;
+
+                            lastTime = nowTime;
+                            machineStatus = MachineStatus.Standby;
+                        }
+
+                        /*
+                         * 当前遍历完最后一条数据后，再额外插入一条数据
+                         * 插入数据：当前状态的点位数据，时间为最后一条数据的时间
+                         * 即为当前查询时间段内，最后一个状态的持续时间
+                         * 防止状态一直没变化导致当班次无数据                         
+                        */
+                        if (i == strArray.Count() - 1 || Convert.ToDateTime(strBit[0]) >= Convert.ToDateTime(endTime))
+                        {
+                            int nowBit = (int)machineStatus; // 状态位
+
+                            double diffv = (nowTime - Convert.ToDateTime(lastTime)).TotalSeconds; // 持续时间
+
+                            SqlString.Append(
+                                $"('{workdate}','{workshift}','{lineID}','{deviceID}','{msgID}.{nowBit}'," +
+                                $"'{nowBit}','1','1','{diffv}'," +
+                                $"'{nowTime:yyyy-MM-dd HH:mm:ss.fff}','{lastTime:yyyy-MM-dd HH:mm:ss.fff}',now()),"
+                                );
+
+                            Lcount++;
+                        }
+
+                        if (Lcount > 1000)
+                        {
+                            string ssql2 = SqlString.Remove(SqlString.Length - 1, 1).ToString();
+                            int aa = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssql2);
+                            SqlString = new StringBuilder(sqlhead);
+                            Lcount = 0;
+                        }
+
+                        if (Convert.ToDateTime(strBit[0]) >= Convert.ToDateTime(endTime))
+                        {
+                            break; // 遍历到数据时间大于结束时间，结束遍历
+                        }
+                    }
+
+                }
+
+
+                // watch.Stop();
+                if (Lcount > 0)
+                {
+                    string ssql2 = SqlString.Remove(SqlString.Length - 1, 1).ToString();
+                    int aa = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssql2);
+
+                    AddListStr(workdate + " & " + workshift + " & " + deviceID + "停机信息处理完成！ " + DateTime.Now.ToString());
+
+                }
+
+
+            }
+            catch (ThreadAbortException)
+            {
+                // 忽略中止线程异常（关闭时，直接中止线程会抛出 ThreadAbortException异常）
+            }
+            catch (Exception ex)
+            {
+                AddListStr("出错了！ ");
+                System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd_") + ".log", ex.ToString() + DateTime.Now.ToString() + "\r\n");
+                System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd_") + "SQL.log", SqlString.ToString() + DateTime.Now.ToString() + "\r\n");
+            }
+        }
+
 
         /// <summary>
         /// 获取停机信息
@@ -1352,5 +1629,16 @@ namespace Slac_DataAnalysis
                 LogConfig.Intence.WriteLog("ErrLog", "Thread", $"{ex.Message}");
             }
         }
+    }
+
+    /// <summary>
+    /// 枚举：设备运行状态
+    /// </summary>
+    public enum MachineStatus
+    {
+        Run = 0,       // 运行
+        Stop = 1,      // 故障停机
+        Standby = 2,   // 待机
+        None = 3
     }
 }
