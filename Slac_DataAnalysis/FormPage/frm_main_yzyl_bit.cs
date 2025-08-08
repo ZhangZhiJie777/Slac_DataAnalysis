@@ -73,6 +73,7 @@ namespace Slac_DataAnalysis_Bit
         private volatile HttpClient httpClient32;    // 32位设备HttpClient（用于查询点位数据）        
         private volatile HttpClient httpClientTimer; // 定时器HttpClient（用于查询服务器最新数据是否需要开始分析)
 
+        public DataSet msglist_rpt = new DataSet();// 查询msglist_report表，存储获取的所有设备信息
         #region 数据库配置参数        
         private static string CHuser = "default"; // click house数据库用户名
         private static string CHserver;           // click house数据库IP // "172.16.253.3"
@@ -86,10 +87,13 @@ namespace Slac_DataAnalysis_Bit
         private static string RedisServer;  // Redis数据库IP
         private static int RedisPort;       // Redis数据库端口
         private static string RedisPasswd;  // Redis数据库密码
+        private static int RedisDb;         // Redis数据库索引
 
         private static string line_id;      // 线体ID line +线体编号
         private static string companyNum;   // "yzenpack"; //公司名称（数据库名称） 
         private static string Conn_battery; // 看板服务器Mysql数据库连接字符串
+
+        private static string isAnalysisByConfigMsgID;    // 是否根据配置表中的msg_id进行分析（不通过遍历一段时间服务器的数据获取msg_id）
         #endregion        
 
         #region 注释
@@ -145,9 +149,13 @@ namespace Slac_DataAnalysis_Bit
                 RedisServer = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[0];
                 RedisPort = Convert.ToInt32(list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[1]);
                 RedisPasswd = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[2];
+                RedisDb = Convert.ToInt32(list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[3]);
 
                 //上一次报警分析时间
                 lastAnalyseTime = list.Find(e => e.Name.Trim() == "lastAnalyseTime").Value.Trim();
+
+                // 是否根据配置表中的msg_id进行分析（不通过遍历一段时间服务器的数据获取msg_id）
+                isAnalysisByConfigMsgID = list.Find(e => e.Name.Trim() == "isAnalysisByConfigMsgID").Value.Trim();
 
                 // 分段模式下，初始化为班次起始时间
                 if (!string.IsNullOrEmpty(lastAnalyseTime) && lastAnalyseTime.Length == 19)
@@ -494,105 +502,226 @@ namespace Slac_DataAnalysis_Bit
                         AddListStr($"开始分析 {startTime} ~ {endTime} 时间段内数据  @ {DateTime.Now.ToString()}");
                         LogConfig.Intence.WriteLog("RunLog", "Alarm", $"开始分析{startTime}~{endTime}时间段内数据");
 
+                        #region 获取 msglist_report配置表：虚拟线体号、线体号、虚拟设备号、设备号、报警信息msg_id集合
+                        // 查询看板服务器数据库上面的 msglist_report 表，获取所有设备信息
+                        string ssql = "	select from_line_id,line_id,from_device_id,device_id,alarm_msg_id,device_analysis_bit,qty_msg_id,type,bit_type,status_a_msg_id,status_a_bit_id,status_b_msg_id,status_b_bit_id from msglist_report_yibinxianlai where from_line_id='" + line_id + "'";
+                        msglist_rpt = ConfigHelper.GetDataSet(Conn_battery, CommandType.Text, ssql);
+                        DataTable dt_msglist = msglist_rpt.Tables[0];
+                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"开始报警分析，查询msglist_report表行数：{dt_msglist.Rows.Count}");
+
+                        // 虚拟线体号、线体号、虚拟设备号、设备号、报警信息msg_id集合
+                        List<Tuple<string, string, string, string, string>> list_tuple_16 = new List<Tuple<string, string, string, string, string>>();
+                        List<Tuple<string, string, string, string, string>> list_tuple_32 = new List<Tuple<string, string, string, string, string>>();
+
+                        for (int i = 0; i < dt_msglist.Rows.Count; i++)
+                        {
+                            Tuple<string, string, string, string, string> tuple = new Tuple<string, string, string, string, string>
+                                (
+                                    dt_msglist.Rows[i]["from_line_id"].ToString().Trim(),
+                                    dt_msglist.Rows[i]["line_id"].ToString().Trim(),
+                                    dt_msglist.Rows[i]["from_device_id"].ToString().Trim(),
+                                    dt_msglist.Rows[i]["device_id"].ToString().Trim(),
+                                    dt_msglist.Rows[i]["alarm_msg_id"].ToString().Trim()
+                                );
+
+                            if (dt_msglist.Rows[i]["device_analysis_bit"].ToString() == "16")
+                            {
+                                list_tuple_16.Add(tuple);
+                            }
+                            else if (dt_msglist.Rows[i]["device_analysis_bit"].ToString() == "32")
+                            {
+                                list_tuple_32.Add(tuple);
+                            }
+                        }
+                        #endregion
+
                         task16 = Task.Run(() =>
                         {
-                            try
+                            if (isAnalysisByConfigMsgID.Equals("1"))
                             {
-                                // chizhoujz.line_id + CHtable_name
-                                // 去重查询一个班次的 device_id,msg_id 组合，且 50< msg_id <150，设备号为 16位设备
-                                string ssql_12 = "select distinct device_id,msg_id FROM " + companyNum + "." + line_id + CHtable_name + " WHERE eventtime >='" + startTime
-                                      + "' and eventtime<'" + endTime + "' and device_id in(" + device_16bit + ") and msg_id >=50 and msg_id <150 order by device_id,msg_id ";
-
-                                string msgIDlist = string.Empty;
-
-                                msgIDlist = PostResponse(httpClient16, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", ssql_12.ToString());
-
-                                string[] alist = msgIDlist.Split(Convert.ToChar("\n"));
-
-                                for (int x = 0; x < alist.Count() - 1; x++)
+                                try
                                 {
-                                    if (cts.Token.IsCancellationRequested) // 取消线程任务
+                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"根据配置表中的msg_id进行报警分析，task16开始");
+                                    foreach (var item in list_tuple_16)
                                     {
-                                        isRightAnalysis = false; // 设置异常标志,这个时间段需要重新分析(手动关闭也需要重新分析)
-                                        break;
+                                        if (cts.Token.IsCancellationRequested) // 取消线程任务
+                                        {
+                                            isRightAnalysis = false; // 设置异常标志,这个时间段需要重新分析(手动关闭也需要重新分析)
+                                            break;
+                                        }
+                                        string from_line_id = item.Item1;
+                                        string line_id = item.Item2;
+                                        string from_device_id = item.Item3;
+                                        string device_id = item.Item4;
+                                        List<string> msgIDlist = item.Item5.Trim().Split(',').ToList();
+
+                                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"按照16位解析设备号：{from_device_id}，msgid：{item.Item5.Trim()}");
+
+                                        foreach (var msgid in msgIDlist)
+                                        {
+                                            if (cts.Token.IsCancellationRequested)
+                                            {
+                                                isRightAnalysis = false;
+                                                break;
+                                            }
+
+                                            getErrorValueFromCH_16bit(from_line_id, line_id, from_device_id, device_id, msgid, cts.Token);  //个别机器的报警信息只计算16位
+                                        }
                                     }
-                                    string[] device_msg_list = alist[x].Split(Convert.ToChar("\t"));
-                                    string deviceid = device_msg_list[0];
-                                    string msgid = device_msg_list[1];
+                                }
+                                catch (Exception ex)
+                                {
+                                    isRightAnalysis = false;
+                                    LogConfig.Intence.WriteLog("ErrLog", "Task", $"分析{startTime}~{endTime}时间段内数据，异步任务 task16 异常：{ex.ToString()}\r\n");
+                                }
 
-                                    // 测试
-                                    //if (deviceid == "12" && Convert.ToInt32(msgid) >60)
-                                    //{
-                                    //    break;
-                                    //}
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    // chizhoujz.line_id + CHtable_name
+                                    // 去重查询一个班次的 device_id,msg_id 组合，且 50< msg_id <150，设备号为 16位设备
+                                    string ssql_12 = "select distinct device_id,msg_id FROM " + companyNum + "." + line_id + CHtable_name + " WHERE eventtime >='" + startTime
+                                          + "' and eventtime<'" + endTime + "' and device_id in(" + device_16bit + ") and msg_id >=50 and msg_id <150 order by device_id,msg_id ";
 
-                                    //LogConfig.Intence.WriteLog("RunLog", "Alarm", $"分析设备号{deviceid},msgid: {msgid} 的数据");
+                                    string msgIDlist = string.Empty;
 
-                                    getErrorValueFromCH_16bit(line_id, deviceid, deviceid, msgid, cts.Token);  //个别机器的报警信息只计算16位
+                                    msgIDlist = PostResponse(httpClient16, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", ssql_12.ToString());
 
-                                    //
-                                    //string[] list_16bit = device_16bit.Split(Convert.ToChar(","));
-                                    //if (list_16bit.Contains(deviceid))
-                                    //{
-                                    //    getErrorValueFromCH_16bit(line_id, deviceid, deviceid, msgid);  //个别机器的报警信息只计算16位
-                                    //}
-                                    //else
-                                    //{
-                                    //    getErrorValueFromCH(line_id, deviceid, deviceid, msgid);  //扬州会出现设备ID与采集ID不一致的情况
-                                    //}
+                                    string[] alist = msgIDlist.Split(Convert.ToChar("\n"));
+
+                                    for (int x = 0; x < alist.Count() - 1; x++)
+                                    {
+                                        if (cts.Token.IsCancellationRequested) // 取消线程任务
+                                        {
+                                            isRightAnalysis = false; // 设置异常标志,这个时间段需要重新分析(手动关闭也需要重新分析)
+                                            break;
+                                        }
+                                        string[] device_msg_list = alist[x].Split(Convert.ToChar("\t"));
+                                        string deviceid = device_msg_list[0];
+                                        string msgid = device_msg_list[1];
+
+                                        // 测试
+                                        //if (deviceid == "12" && Convert.ToInt32(msgid) >60)
+                                        //{
+                                        //    break;
+                                        //}
+
+                                        //LogConfig.Intence.WriteLog("RunLog", "Alarm", $"分析设备号{deviceid},msgid: {msgid} 的数据");
+
+                                        getErrorValueFromCH_16bit(line_id, line_id, deviceid, deviceid, msgid, cts.Token);  //个别机器的报警信息只计算16位
+
+                                        //
+                                        //string[] list_16bit = device_16bit.Split(Convert.ToChar(","));
+                                        //if (list_16bit.Contains(deviceid))
+                                        //{
+                                        //    getErrorValueFromCH_16bit(line_id, deviceid, deviceid, msgid);  //个别机器的报警信息只计算16位
+                                        //}
+                                        //else
+                                        //{
+                                        //    getErrorValueFromCH(line_id, deviceid, deviceid, msgid);  //扬州会出现设备ID与采集ID不一致的情况
+                                        //}
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    isRightAnalysis = false;
+                                    LogConfig.Intence.WriteLog("ErrLog", "Task", $"分析{startTime}~{endTime}时间段内数据，异步任务 task16 异常：{ex.ToString()}\r\n");
                                 }
                             }
-                            catch (Exception ex)
-                            {
-                                isRightAnalysis = false;
-                                LogConfig.Intence.WriteLog("ErrLog", "Task", $"分析{startTime}~{endTime}时间段内数据，异步任务 task16 异常：{ex.ToString()}\r\n");
-                            }
+
                         }, cts.Token);
 
                         task32 = Task.Run(() =>
                         {
-                            try
+                            if (isAnalysisByConfigMsgID.Equals("1"))
                             {
-                                // 去重查询一个班次的 device_id,msg_id 组合，且 50< msg_id <100，设备号为 32位设备
-                                string ssql_other = "select distinct device_id,msg_id FROM " + companyNum + "." + line_id + CHtable_name + " WHERE eventtime >='" + startTime
-                                                         + "' and eventtime<'" + endTime + "'  and device_id not in(" + device_16bit + ") and msg_id >=50 and msg_id <100  order by device_id,msg_id ";
-
-                                string msgIDlist_other = string.Empty;
-
-                                msgIDlist_other = PostResponse(httpClient32, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", ssql_other.ToString());
-
-                                string[] alist_other = msgIDlist_other.Split(Convert.ToChar("\n"));
-
-                                for (int x = 0; x < alist_other.Count() - 1; x++)
+                                try
                                 {
-                                    if (cts.Token.IsCancellationRequested)
+                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"根据配置表中的msg_id进行报警分析，task32开始");
+                                    foreach (var item in list_tuple_32)
                                     {
-                                        isRightAnalysis = false; // 设置异常标志,这个时间段需要重新分析(手动关闭也需要重新分析)
-                                        break;
+                                        if (cts.Token.IsCancellationRequested) // 取消线程任务
+                                        {
+                                            isRightAnalysis = false; // 设置异常标志,这个时间段需要重新分析(手动关闭也需要重新分析)
+                                            break;
+                                        }
+                                        string from_line_id = item.Item1;
+                                        string line_id = item.Item2;
+                                        string from_device_id = item.Item3;
+                                        string device_id = item.Item4;
+                                        List<string> msgIDlist = item.Item5.Trim().Split(',').ToList();
+
+                                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"按照32位解析设备号：{from_device_id}，msgid：{item.Item5.Trim()}");
+
+                                        foreach (var msgid in msgIDlist)
+                                        {
+                                            if (cts.Token.IsCancellationRequested)
+                                            {
+                                                isRightAnalysis = false;
+                                                break;
+                                            }
+
+                                            getErrorValueFromCH(from_line_id, line_id, from_device_id, device_id, msgid, cts.Token);  //个别机器的报警信息只计算16位
+                                        }
                                     }
-
-                                    string[] device_msg_list_other = alist_other[x].Split(Convert.ToChar("\t"));
-                                    string deviceid = device_msg_list_other[0];
-                                    string msgid = device_msg_list_other[1];
-                                    string[] list_16bit = device_16bit.Split(Convert.ToChar(","));
-
-                                    // 测试
-                                    //if (deviceid != "12")
-                                    //{
-                                    //    break;
-                                    //}
-
-                                    //LogConfig.Intence.WriteLog("RunLog", "Alarm", $"分析设备号{deviceid},msgid: {msgid} 的数据");
-
-                                    getErrorValueFromCH(line_id, deviceid, deviceid, msgid, cts.Token);  //扬州会出现设备ID与采集ID不一致的情况
+                                }
+                                catch (Exception ex)
+                                {
+                                    isRightAnalysis = false;
+                                    LogConfig.Intence.WriteLog("ErrLog", "Task", $"分析{startTime}~{endTime}时间段内数据，异步任务 task32 异常：{ex.ToString()}\r\n");
                                 }
 
                             }
-                            catch (Exception ex)
+                            else
                             {
-                                isRightAnalysis = false;
-                                LogConfig.Intence.WriteLog("ErrLog", "Task", $"分析{startTime}~{endTime}时间段内数据，异步任务 task32 异常：{ex.ToString()}\r\n");
+                                try
+                                {
+                                    // 去重查询一个班次的 device_id,msg_id 组合，且 50< msg_id <100，设备号为 32位设备
+                                    string ssql_other = "select distinct device_id,msg_id FROM " + companyNum + "." + line_id + CHtable_name + " WHERE eventtime >='" + startTime
+                                                             + "' and eventtime<'" + endTime + "'  and device_id not in(" + device_16bit + ")  and   msg_id >=50 and msg_id <100  order by device_id,msg_id ";
+
+                                    string msgIDlist_other = string.Empty;
+
+                                    msgIDlist_other = PostResponse(httpClient32, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", ssql_other.ToString());
+
+                                    string[] alist_other = msgIDlist_other.Split(Convert.ToChar("\n"));
+
+                                    for (int x = 0; x < alist_other.Count() - 1; x++)
+                                    {
+                                        if (cts.Token.IsCancellationRequested)
+                                        {
+                                            isRightAnalysis = false; // 设置异常标志,这个时间段需要重新分析(手动关闭也需要重新分析)
+                                            break;
+                                        }
+
+                                        string[] device_msg_list_other = alist_other[x].Split(Convert.ToChar("\t"));
+                                        string deviceid = device_msg_list_other[0];
+                                        string msgid = device_msg_list_other[1];
+                                        string[] list_16bit = device_16bit.Split(Convert.ToChar(","));
+
+                                        // 测试
+                                        //if (deviceid != "12")
+                                        //{
+                                        //    break;
+                                        //}
+
+                                        //LogConfig.Intence.WriteLog("RunLog", "Alarm", $"分析设备号{deviceid},msgid: {msgid} 的数据");
+
+                                        getErrorValueFromCH(line_id, line_id, deviceid, deviceid, msgid, cts.Token);  //扬州会出现设备ID与采集ID不一致的情况
+                                    }
+
+                                }
+                                catch (Exception ex)
+                                {
+                                    isRightAnalysis = false;
+                                    LogConfig.Intence.WriteLog("ErrLog", "Task", $"分析{startTime}~{endTime}时间段内数据，异步任务 task32 异常：{ex.ToString()}\r\n");
+                                }
+
                             }
+
+
                         }, cts.Token);
 
                         #region 注释
@@ -786,10 +915,10 @@ namespace Slac_DataAnalysis_Bit
                                     DateTime ds, de;
                                     DateTime.TryParse(startTime, out ds);
                                     DateTime.TryParse(endTime, out de);
-                                    DateTime nowTime = DateTime.Now.ToUniversalTime().AddMinutes(30); // 当前UTC时间+30分钟
+                                    DateTime nowTime = DateTime.Now.ToUniversalTime(); // 当前UTC时间
                                     if (de < nowTime)
                                     {
-                                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"前startTime：{startTime}，前endTime：{endTime} 后startTime：{ds.AddHours(12).ToString()}，后endTime：{de.AddHours(12).ToString()}");
+                                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"前startTime：{startTime}，前endTime：{endTime}，后startTime：{ds.AddHours(12).ToString()}，后endTime：{de.AddHours(12).ToString()}");
 
                                         startTime = ds.AddHours(12).ToString();
                                         endTime = de.AddHours(12).ToString();
@@ -863,7 +992,7 @@ namespace Slac_DataAnalysis_Bit
         /// <param name="deviceID"></param>
         /// <param name="FromdeviceID"></param>
         /// <param name="msgID"></param>
-        private void getErrorValueFromCH(string lineID, string deviceID, string FromdeviceID, string msgID, CancellationToken token)
+        private void getErrorValueFromCH(string FromlineID, string lineID, string FromdeviceID, string deviceID, string msgID, CancellationToken token)
         {
             //统计报警信息的msg，哪些发生了变化
 
@@ -877,14 +1006,15 @@ namespace Slac_DataAnalysis_Bit
 
                 RedisClient client = new RedisClient(RedisServer, RedisPort);
                 client.Password = RedisPasswd;    //密码 "slac1028";
-                client.Db = Convert.ToInt32(lineID.Substring(lineID.Length - 2)); //根据线体号选择数据库 0-15
+                //client.Db = Convert.ToInt32(lineID.Substring(lineID.Length - 2)); //根据线体号选择数据库 0-15
+                client.Db = RedisDb; //根据配置选择数据库 0-15
 
                 StringBuilder SqlString = new StringBuilder("");
                 string sqlhead = "insert into " + lineID + "_bit (workdate,workshift,line_id,device_id,msg_id,pv,lpv,diffv,pt,lpt,indate) values ";
                 SqlString = new StringBuilder(sqlhead);
                 int Lcount = 0;
 
-                string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + lineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
+                string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + FromlineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
                  + "' and device_id =" + FromdeviceID + " and msg_id =" + msgID + " order by eventtime  ";
 
                 byte[] postData = Encoding.ASCII.GetBytes(ssql.ToString());
@@ -1105,7 +1235,7 @@ namespace Slac_DataAnalysis_Bit
         /// <param name="deviceID"></param>
         /// <param name="FromdeviceID"></param>
         /// <param name="msgID"></param>
-        private void getErrorValueFromCH_16bit(string lineID, string deviceID, string FromdeviceID, string msgID, CancellationToken token)
+        private void getErrorValueFromCH_16bit(string FromlineID, string lineID, string FromdeviceID, string deviceID, string msgID, CancellationToken token)
         {
             //统计报警信息的msg，哪些发生了变化
 
@@ -1116,7 +1246,8 @@ namespace Slac_DataAnalysis_Bit
                 RedisClient client = new RedisClient(RedisServer, RedisPort);
                 client.Password = RedisPasswd;    //密码 //测试
                 //client.Password = "slac1028";   //密码
-                client.Db = Convert.ToInt32(lineID.Substring(lineID.Length - 2)); //根据线体号选择数据库 0-15
+                //client.Db = Convert.ToInt32(lineID.Substring(lineID.Length - 2)); //根据线体号选择数据库 0-15
+                client.Db = RedisDb; //根据配置选择数据库 0-15
 
                 // 初始化sql语句以及提交数据量（插入看板服务器mysql数据库）
                 StringBuilder SqlString = new StringBuilder("");
@@ -1127,7 +1258,7 @@ namespace Slac_DataAnalysis_Bit
                 // 获取clickhouse数据库报警信息
                 /// 根据device_id，msg_id 查询一个班次内的 eventtime 和 msg_bit（运算得出）
                 /// data 和 （1768515945-device_id*msg_id）的值 ，使用 bitXor 操作进行 按位异或 运算，得到 msg_bit
-                string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + lineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
+                string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + FromlineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
                  + "' and device_id =" + FromdeviceID + " and msg_id =" + msgID + " order by eventtime  ";
 
                 byte[] postData = Encoding.ASCII.GetBytes(ssql.ToString());
