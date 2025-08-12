@@ -175,7 +175,7 @@ namespace Slac_DataAnalysis_Bit
                 }
 
                 // 判断界面选择，整班次模式还是分段模式
-                if (string.IsNullOrEmpty(MainForm.alarm_Model) || MainForm.alarm_Model == "整班次模式")
+                if (string.IsNullOrEmpty(MainForm.alarmModel) || MainForm.alarmModel == "整班次模式")
                 {
                     lastAnalyseTime = "0";
                     isNewVersion = false;
@@ -448,7 +448,7 @@ namespace Slac_DataAnalysis_Bit
                                     getTodayAndShift();
                                     isStartExec10 = true;
 
-                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"最新{Eventtime.Count}条数据，大于上一次分析时间31分钟，开始下一次分析");
+                                    LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"最新{Eventtime.Count}条数据，大于上一次分析时间31分钟，开始下一次分析");
                                 }
 
                                 Eventtime.Clear();
@@ -500,14 +500,14 @@ namespace Slac_DataAnalysis_Bit
                         stopwatch.Start();
 
                         AddListStr($"开始分析 {startTime} ~ {endTime} 时间段内数据  @ {DateTime.Now.ToString()}");
-                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"开始分析{startTime}~{endTime}时间段内数据");
+                        LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"开始分析{startTime}~{endTime}时间段内数据");
 
                         #region 获取 msglist_report配置表：虚拟线体号、线体号、虚拟设备号、设备号、报警信息msg_id集合
                         // 查询看板服务器数据库上面的 msglist_report 表，获取所有设备信息
-                        string ssql = "	select from_line_id,line_id,from_device_id,device_id,alarm_msg_id,device_analysis_bit,qty_msg_id,type,bit_type,status_a_msg_id,status_a_bit_id,status_b_msg_id,status_b_bit_id from msglist_report_yibinxianlai where from_line_id='" + line_id + "'";
+                        string ssql = "	select from_line_id,line_id,from_device_id,device_id,alarm_msg_id,device_analysis_bit,qty_msg_id,type,bit_type,status_a_msg_id,status_a_bit_id,status_b_msg_id,status_b_bit_id from msglist_report where line_id='" + line_id + "'";
                         msglist_rpt = ConfigHelper.GetDataSet(Conn_battery, CommandType.Text, ssql);
                         DataTable dt_msglist = msglist_rpt.Tables[0];
-                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"开始报警分析，查询msglist_report表行数：{dt_msglist.Rows.Count}");
+                        LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"开始报警分析，查询msglist_report表行数：{dt_msglist.Rows.Count}");
 
                         // 虚拟线体号、线体号、虚拟设备号、设备号、报警信息msg_id集合
                         List<Tuple<string, string, string, string, string>> list_tuple_16 = new List<Tuple<string, string, string, string, string>>();
@@ -541,7 +541,7 @@ namespace Slac_DataAnalysis_Bit
                             {
                                 try
                                 {
-                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"根据配置表中的msg_id进行报警分析，task16开始");
+                                    LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"根据配置表中的msg_id进行报警分析，task16开始");
                                     foreach (var item in list_tuple_16)
                                     {
                                         if (cts.Token.IsCancellationRequested) // 取消线程任务
@@ -555,7 +555,7 @@ namespace Slac_DataAnalysis_Bit
                                         string device_id = item.Item4;
                                         List<string> msgIDlist = item.Item5.Trim().Split(',').ToList();
 
-                                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"按照16位解析设备号：{from_device_id}，msgid：{item.Item5.Trim()}");
+                                        LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"按照16位解析设备号：{from_device_id}，msgid：{item.Item5.Trim()}");
 
                                         foreach (var msgid in msgIDlist)
                                         {
@@ -608,7 +608,7 @@ namespace Slac_DataAnalysis_Bit
                                         //    break;
                                         //}
 
-                                        //LogConfig.Intence.WriteLog("RunLog", "Alarm", $"分析设备号{deviceid},msgid: {msgid} 的数据");
+                                        //LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"分析设备号{deviceid},msgid: {msgid} 的数据");
 
                                         getErrorValueFromCH_16bit(line_id, line_id, deviceid, deviceid, msgid, cts.Token);  //个别机器的报警信息只计算16位
 
@@ -639,7 +639,7 @@ namespace Slac_DataAnalysis_Bit
                             {
                                 try
                                 {
-                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"根据配置表中的msg_id进行报警分析，task32开始");
+                                    LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"根据配置表中的msg_id进行报警分析，task32开始");
                                     foreach (var item in list_tuple_32)
                                     {
                                         if (cts.Token.IsCancellationRequested) // 取消线程任务
@@ -653,7 +653,7 @@ namespace Slac_DataAnalysis_Bit
                                         string device_id = item.Item4;
                                         List<string> msgIDlist = item.Item5.Trim().Split(',').ToList();
 
-                                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"按照32位解析设备号：{from_device_id}，msgid：{item.Item5.Trim()}");
+                                        LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"按照32位解析设备号：{from_device_id}，msgid：{item.Item5.Trim()}");
 
                                         foreach (var msgid in msgIDlist)
                                         {
@@ -707,7 +707,7 @@ namespace Slac_DataAnalysis_Bit
                                         //    break;
                                         //}
 
-                                        //LogConfig.Intence.WriteLog("RunLog", "Alarm", $"分析设备号{deviceid},msgid: {msgid} 的数据");
+                                        //LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"分析设备号{deviceid},msgid: {msgid} 的数据");
 
                                         getErrorValueFromCH(line_id, line_id, deviceid, deviceid, msgid, cts.Token);  //扬州会出现设备ID与采集ID不一致的情况
                                     }
@@ -798,7 +798,7 @@ namespace Slac_DataAnalysis_Bit
                         Task.WaitAll(task16, task32);
 
                         stopwatch.Stop();
-                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"分析{startTime}~{endTime}时间段内数据，耗费时间：{stopwatch.Elapsed.TotalSeconds}");
+                        LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"分析{startTime}~{endTime}时间段内数据，耗费时间：{stopwatch.Elapsed.TotalSeconds}");
 
 
                         #region 两种分析模式下，结束一次分析后，执行不同处理逻辑
@@ -854,7 +854,7 @@ namespace Slac_DataAnalysis_Bit
                                         {
                                             DateTime.UtcNow.ToString();
                                             AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
-                                            LogConfig.Intence.WriteLog("RunLog", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
+                                            LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
 
                                             // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime
                                             DBSystemConfig dbSystemConfig = new DBSystemConfig();
@@ -884,7 +884,7 @@ namespace Slac_DataAnalysis_Bit
                                     //        {
                                     //            DateTime.UtcNow.ToString();
                                     //            AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
-                                    //            LogConfig.Intence.WriteLog("RunLog", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
+                                    //            LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
 
                                     //            // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime
                                     //            DBSystemConfig dbSystemConfig = new DBSystemConfig();
@@ -909,7 +909,7 @@ namespace Slac_DataAnalysis_Bit
                                 {
                                     // 整班次版本(查询一整个班次数据分析),结束后判断当前时间是否属于当班次，则继续查询分析下一个班次数据
                                     AddListStr($"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
-                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
+                                    LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
                                     // isAnalyzing = false;                            
 
                                     DateTime ds, de;
@@ -918,7 +918,7 @@ namespace Slac_DataAnalysis_Bit
                                     DateTime nowTime = DateTime.Now.ToUniversalTime(); // 当前UTC时间
                                     if (de < nowTime)
                                     {
-                                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"前startTime：{startTime}，前endTime：{endTime}，后startTime：{ds.AddHours(12).ToString()}，后endTime：{de.AddHours(12).ToString()}");
+                                        LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"前startTime：{startTime}，前endTime：{endTime}，后startTime：{ds.AddHours(12).ToString()}，后endTime：{de.AddHours(12).ToString()}");
 
                                         startTime = ds.AddHours(12).ToString();
                                         endTime = de.AddHours(12).ToString();
@@ -973,6 +973,7 @@ namespace Slac_DataAnalysis_Bit
                     }
                     catch (Exception ex)
                     {
+                        isAnalyzing = false;
                         LogConfig.Intence.WriteLog("ErrLog", "Task", $"{ex.ToString()}\r\n");
                         // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + "_error10.log", ex.ToString() + DateTime.Now.ToString() + "\r\n");
                     }
@@ -992,7 +993,7 @@ namespace Slac_DataAnalysis_Bit
         /// <param name="deviceID"></param>
         /// <param name="FromdeviceID"></param>
         /// <param name="msgID"></param>
-        private void getErrorValueFromCH(string FromlineID, string lineID, string FromdeviceID, string deviceID, string msgID, CancellationToken token)
+        private void getErrorValueFromCH(string fromlineID, string lineID, string FromdeviceID, string deviceID, string msgID, CancellationToken token)
         {
             //统计报警信息的msg，哪些发生了变化
 
@@ -1014,7 +1015,7 @@ namespace Slac_DataAnalysis_Bit
                 SqlString = new StringBuilder(sqlhead);
                 int Lcount = 0;
 
-                string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + FromlineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
+                string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + fromlineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
                  + "' and device_id =" + FromdeviceID + " and msg_id =" + msgID + " order by eventtime  ";
 
                 byte[] postData = Encoding.ASCII.GetBytes(ssql.ToString());
@@ -1069,15 +1070,15 @@ namespace Slac_DataAnalysis_Bit
 
                     initValue = Convert.ToInt32(string.Join("", listLastKeyValue), 2);
 
-                    LogConfig.Intence.WriteLog("RunLog", "Alarm_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID} 上一次值：{initValue}");
+                    LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID} 上一次值：{initValue}");
                     #endregion
 
                     lastValue32 = initValue;
 
-                    LogConfig.Intence.WriteLog("RunLog", $"Alarm_time{deviceID}", $"分析 {startTime}~{endTime} 时间段内，设备号{deviceID}，msgID {msgID} 查询数据数量：{strArray.Count()}");
+                    LogConfig.Intence.WriteLog("RunLog\\Alarm", $"Alarm_time{deviceID}", $"分析 {startTime}~{endTime} 时间段内，设备号{deviceID}，msgID {msgID} 查询数据数量：{strArray.Count()}");
 
                     sc.Stop();
-                    LogConfig.Intence.WriteLog("RunLog", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环前查询耗时：{sc.ElapsedMilliseconds}");
+                    LogConfig.Intence.WriteLog("RunLog\\Alarm", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环前查询耗时：{sc.ElapsedMilliseconds}");
 
 
                     //测试
@@ -1090,7 +1091,7 @@ namespace Slac_DataAnalysis_Bit
                     {
                         if (token.IsCancellationRequested)
                         {
-                            LogConfig.Intence.WriteLog("RunLog", "Alarm", "32位解析break跳出");
+                            LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", "32位解析break跳出");
                             break;
                         }
 
@@ -1105,7 +1106,7 @@ namespace Slac_DataAnalysis_Bit
 
                             //if (deviceID.Equals("18"))
                             //{
-                            //    LogConfig.Intence.WriteLog("RunLog", "Alarm_value", $"设备号{deviceID}{msgID}:nowValue:{nowValue},lastValue:{lastValue}");
+                            //    LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm_value", $"设备号{deviceID}{msgID}:nowValue:{nowValue},lastValue:{lastValue}");
                             //}
 
                             int xorValue = nowValue ^ lastValue32;
@@ -1173,12 +1174,12 @@ namespace Slac_DataAnalysis_Bit
 
                                 if (Lcount > 1000)
                                 {
-                                    //LogConfig.Intence.WriteLog("RunLog", "Stats32", "32位解析：每一千条数据上传数据库开始");
+                                    //LogConfig.Intence.WriteLog("RunLog\\Alarm", "Stats32", "32位解析：每一千条数据上传数据库开始");
                                     string ssql2 = SqlString.Remove(SqlString.Length - 1, 1).ToString();
                                     int aa = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssql2);
                                     SqlString = new StringBuilder(sqlhead);
                                     Lcount = 0;
-                                    //LogConfig.Intence.WriteLog("RunLog", "Stats32", "32位解析：每一千条数据上传数据库完成");
+                                    //LogConfig.Intence.WriteLog("RunLog\\Alarm", "Stats32", "32位解析：每一千条数据上传数据库完成");
 
                                 }
                             }
@@ -1191,10 +1192,10 @@ namespace Slac_DataAnalysis_Bit
                         }
                     }
 
-                    LogConfig.Intence.WriteLog("RunLog", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 报警变化次数：{valueChange}");
+                    LogConfig.Intence.WriteLog("RunLog\\Alarm", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 报警变化次数：{valueChange}");
 
                     se.Stop();
-                    LogConfig.Intence.WriteLog("RunLog", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环整体耗时：{se.ElapsedMilliseconds}\r\n");
+                    LogConfig.Intence.WriteLog("RunLog\\Alarm", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环整体耗时：{se.ElapsedMilliseconds}\r\n");
 
                 }
                 watch.Stop();
@@ -1209,7 +1210,7 @@ namespace Slac_DataAnalysis_Bit
 
                     // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + ".log", workdate + " & " + workshift + " & " + deviceID + "." + msgID + "报警信息处理完成！" + " @ " + DateTime.Now.ToString() + "\r\n");
 
-                    //LogConfig.Intence.WriteLog("RunLog", "Stats32", "32位解析：不满一千调数据上传数据库完成");
+                    //LogConfig.Intence.WriteLog("RunLog\\Alarm", "Stats32", "32位解析：不满一千调数据上传数据库完成");
                 }
 
                 AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 报警信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
@@ -1235,7 +1236,7 @@ namespace Slac_DataAnalysis_Bit
         /// <param name="deviceID"></param>
         /// <param name="FromdeviceID"></param>
         /// <param name="msgID"></param>
-        private void getErrorValueFromCH_16bit(string FromlineID, string lineID, string FromdeviceID, string deviceID, string msgID, CancellationToken token)
+        private void getErrorValueFromCH_16bit(string fromlineID, string lineID, string FromdeviceID, string deviceID, string msgID, CancellationToken token)
         {
             //统计报警信息的msg，哪些发生了变化
 
@@ -1258,7 +1259,7 @@ namespace Slac_DataAnalysis_Bit
                 // 获取clickhouse数据库报警信息
                 /// 根据device_id，msg_id 查询一个班次内的 eventtime 和 msg_bit（运算得出）
                 /// data 和 （1768515945-device_id*msg_id）的值 ，使用 bitXor 操作进行 按位异或 运算，得到 msg_bit
-                string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + FromlineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
+                string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + fromlineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
                  + "' and device_id =" + FromdeviceID + " and msg_id =" + msgID + " order by eventtime  ";
 
                 byte[] postData = Encoding.ASCII.GetBytes(ssql.ToString());
@@ -1312,7 +1313,7 @@ namespace Slac_DataAnalysis_Bit
                     }
 
                     initValue = Convert.ToInt32(string.Join("", listLastKeyValue), 2);
-                    LogConfig.Intence.WriteLog("RunLog", "Alarm_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID} 上一次值：{initValue}");
+                    LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID} 上一次值：{initValue}");
 
                     #endregion
                     lastValue16 = initValue;
@@ -1408,7 +1409,7 @@ namespace Slac_DataAnalysis_Bit
                         }
                     }
 
-                    LogConfig.Intence.WriteLog("RunLog", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 报警变化次数：{valueChange}");
+                    LogConfig.Intence.WriteLog("RunLog\\Alarm", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 报警变化次数：{valueChange}");
 
                 }
                 watch.Stop();
@@ -1544,7 +1545,7 @@ namespace Slac_DataAnalysis_Bit
         {
             try
             {
-                LogConfig.Intence.WriteLog("RunLog", "Alarm", $"Task16、Task32开始关闭：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
+                LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"Task16、Task32开始关闭：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
                 cts.Cancel();
 
                 thread10State = false; // 停止线程               
@@ -1577,7 +1578,7 @@ namespace Slac_DataAnalysis_Bit
                         await Task.WhenAll(task16, task32);
                     }
 
-                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"Task16、Task32结束关闭：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
+                    LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"Task16、Task32结束关闭：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
 
                     if (task16.Status == TaskStatus.RanToCompletion && task32.Status == TaskStatus.RanToCompletion)
                     {
@@ -1587,7 +1588,7 @@ namespace Slac_DataAnalysis_Bit
                         task32 = null;
                         cts.Dispose();
                         cts = null;
-                        LogConfig.Intence.WriteLog("RunLog", "Alarm", $"Task16、Task32释放资源成功：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}\r\n");
+                        LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"Task16、Task32释放资源成功：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}\r\n");
                     }
                 }
 

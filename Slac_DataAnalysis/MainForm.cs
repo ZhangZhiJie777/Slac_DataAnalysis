@@ -12,6 +12,7 @@ using System.IO;
 using System.Management;
 using System.Threading;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Button;
 
 namespace Slac_DataAnalysis
@@ -20,14 +21,14 @@ namespace Slac_DataAnalysis
     {
         private frm_main_yzyl_bit frm_Main_Yzyl_bit = null; // 报警分析
         private frm_main_yzyl frm_Main_Yzyl = null;         // 统计分析
-        private frm_main_yzyl_bit_alarm_btn frm_Main_Yzyl_Bit_Alarm_Btn = null; // 按钮开关分析
+        private frm_main_yzyl_bit_btn frm_Main_Yzyl_Bit_Alarm_Btn = null; // 按钮开关分析
 
-        public volatile static string alarm_Model = string.Empty;     // 报警模式
-        public volatile static string alarm_Btn_Model = string.Empty; // 按钮开关模式
+        public volatile static string alarmModel = string.Empty;     // 报警模式
+        public volatile static string btnModel = string.Empty; // 按钮开关模式
         private static string line_id = string.Empty; // 线体号
 
         private volatile string lastAnalyseTime;           // 上一个时间段分析开始时间
-        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮开关）
+        private volatile string lastAnalyseTime_Btn; // 上一个时间段分析开始时间（按钮开关）
 
         //private TimedTask _timedTask;
 
@@ -58,7 +59,7 @@ namespace Slac_DataAnalysis
                 lastAnalyseTime = list.Find(e => e.Name.Trim() == "lastAnalyseTime").Value.Trim();
 
                 // 上一次按钮开关分析时间
-                lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
+                lastAnalyseTime_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Btn").Value.Trim();
 
             }
             catch (Exception ex)
@@ -198,11 +199,10 @@ namespace Slac_DataAnalysis
             panel6.Location = new Point(5, panel3.Location.Y + newHeightMenu + 5);
 
             groupBox_Alarm.Width=panel2.Width - 10;
-            groupBox_Alarm.Height = panel2.Height - 10;
+            groupBox_Alarm.Height = panel2.Height - 10;            
 
-            panel5.Width = panel3.Width;
-            panel5.Height = (int)(panel3.Height * 0.8);
-
+            groupBox_Stats.Width = panel3.Width - 10;
+            groupBox_Stats.Height = panel3.Height - 10;
 
             groupBox_Alarm_Btn.Width = panel6.Width - 10;
             groupBox_Alarm_Btn.Height = panel6.Height - 10;
@@ -239,9 +239,9 @@ namespace Slac_DataAnalysis
 
                 if (radioButton_Alarm_Sub.Checked)
                 {
-                    alarm_Model = "分段模式";
+                    alarmModel = "分段模式";
                 }
-                else { alarm_Model = "整班次模式"; }
+                else { alarmModel = "整班次模式"; }
 
                 GetParamConfig();
 
@@ -250,7 +250,7 @@ namespace Slac_DataAnalysis
                 {
                     radioButton_Alarm_Sub.Checked = false;
                     radioButton_Alarm_Shift.Checked = true;
-                    alarm_Model = "整班次模式";
+                    alarmModel = "整班次模式";
                 }
 
                 if (radioButton_Alarm_Shift.Checked)
@@ -302,8 +302,10 @@ namespace Slac_DataAnalysis
                 panel1.Controls.Clear();
                 panel1.Controls.Add(frm_Main_Yzyl);
                 //frm_Main_Yzyl.CloseForm += CloseForm;
-                Btn_Form2.BackColor = Color.Green;
-                panel5.Enabled = true;
+                Btn_Form2.BackColor = Color.Green;                
+                dateTimePicker_Stats.Enabled = true;
+                btn_Stats.Enabled = true;
+                comboBox_Stats.Enabled = true;
 
                 frm_Main_Yzyl.UpdateMainFormSettingsInfoEvent += UpdateDateTimePicker;
                 frm_Main_Yzyl.FetchMainFormSettingsInfoEvent += FetchMainFormSettingsInfo;
@@ -328,17 +330,17 @@ namespace Slac_DataAnalysis
                 #region 模式确认
                 if (radioButton_Alarm_Btn_Sub.Checked)
                 {
-                    alarm_Btn_Model = "分段模式";
+                    btnModel = "分段模式";
                 }
-                else { alarm_Btn_Model = "整班次模式"; }
+                else { btnModel = "整班次模式"; }
 
                 GetParamConfig();
                 DateTime dt;
-                if (!DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                if (!DateTime.TryParse(lastAnalyseTime_Btn, out dt))
                 {
                     radioButton_Alarm_Btn_Sub.Checked = false;
                     radioButton_Alarm_Btn_Shift.Checked = true;
-                    alarm_Btn_Model = "整班次模式";
+                    btnModel = "整班次模式";
                 }
 
                 if (radioButton_Alarm_Btn_Shift.Checked)
@@ -359,7 +361,7 @@ namespace Slac_DataAnalysis
                 
                 #endregion
 
-                frm_Main_Yzyl_Bit_Alarm_Btn = new frm_main_yzyl_bit_alarm_btn();
+                frm_Main_Yzyl_Bit_Alarm_Btn = new frm_main_yzyl_bit_btn();
                 frm_Main_Yzyl_Bit_Alarm_Btn.Show();
                 panel1.Controls.Clear();
                 panel1.Controls.Add(frm_Main_Yzyl_Bit_Alarm_Btn);
@@ -450,8 +452,10 @@ namespace Slac_DataAnalysis
                             frm_Main_Yzyl.Dispose();
                             frm_Main_Yzyl = null;
                             Btn_Form2.BackColor = Color.White;
-                            Btn_Form2Stop.Enabled = true;
-                            panel5.Enabled = false;
+                            Btn_Form2Stop.Enabled = true;                            
+                            dateTimePicker_Stats.Enabled = false;
+                            btn_Stats.Enabled = false;
+                            comboBox_Stats.Enabled = false;
                         }));
 
                         //await Task.Run(() =>
@@ -833,7 +837,7 @@ namespace Slac_DataAnalysis
             {
                 GetParamConfig();
                 DateTime dt;
-                if (!DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                if (!DateTime.TryParse(lastAnalyseTime_Btn, out dt))
                 {
                     radioButton_Alarm_Btn_Sub.Checked = false;
                     radioButton_Alarm_Btn_Shift.Checked = true;

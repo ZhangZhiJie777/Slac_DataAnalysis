@@ -19,9 +19,9 @@ using System.Windows.Forms;
 
 namespace Slac_DataAnalysis.FormPage
 {
-    public partial class frm_main_yzyl_bit_alarm_btn : UserControl
+    public partial class frm_main_yzyl_bit_btn : UserControl
     {
-        public frm_main_yzyl_bit_alarm_btn()
+        public frm_main_yzyl_bit_btn()
         {
             InitializeComponent();
 
@@ -59,8 +59,8 @@ namespace Slac_DataAnalysis.FormPage
 
         private volatile bool isAnalyzing;                 // 是否正在分析
         //private volatile string lastAnalyseTime;           // 上一个时间段分析开始时间
-        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮开关）
-        private volatile bool isNewVersion = false;        // 是否是最新版本(true:最新版本,采用标志位时间戳，分段分析  false:不是最新版本，直接分析整个班次) 在获取lastAnalyseTime_Alarm_Btn参数成功的情况下，默认是最新版本
+        private volatile string lastAnalyseTime_Btn; // 上一个时间段分析开始时间（按钮开关）
+        private volatile bool isNewVersion = false;        // 是否是最新版本(true:最新版本,采用标志位时间戳，分段分析  false:不是最新版本，直接分析整个班次) 在获取lastAnalyseTime_Btn参数成功的情况下，默认是最新版本
         private volatile bool isRightAnalysis = true;      // 这次分析是否是正常分析流程（表示这个时间段需要重新分析）
         private volatile bool isInitRedis = false;         // 是否初始化Redis的键值（若当前时间段有报错，重新分析，需要重置Redis）
 
@@ -142,29 +142,29 @@ namespace Slac_DataAnalysis.FormPage
                 RedisPasswd = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[2];
 
                 // 上一次按钮开关分析时间
-                lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
+                lastAnalyseTime_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Btn").Value.Trim();
 
                 // 分段模式下，初始化为班次开始时间
-                if (!string.IsNullOrEmpty(lastAnalyseTime_Alarm_Btn) && lastAnalyseTime_Alarm_Btn.Length == 19)
+                if (!string.IsNullOrEmpty(lastAnalyseTime_Btn) && lastAnalyseTime_Btn.Length == 19)
                 {
                     DateTime dt;
-                    if (DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                    if (DateTime.TryParse(lastAnalyseTime_Btn, out dt))
                     {
                         if (dt.Hour < 12)
                         {
-                            lastAnalyseTime_Alarm_Btn = lastAnalyseTime_Alarm_Btn.Substring(0, 11) + "00:00:00";
+                            lastAnalyseTime_Btn = lastAnalyseTime_Btn.Substring(0, 11) + "00:00:00";
                         }
                         else
                         {
-                            lastAnalyseTime_Alarm_Btn = lastAnalyseTime_Alarm_Btn.Substring(0, 11) + "12:00:00";
+                            lastAnalyseTime_Btn = lastAnalyseTime_Btn.Substring(0, 11) + "12:00:00";
                         }
                     }
                 }
 
                 // 判断界面选择，整班次模式还是分段模式
-                if (string.IsNullOrEmpty(MainForm.alarm_Btn_Model) || MainForm.alarm_Btn_Model == "整班次模式")
+                if (string.IsNullOrEmpty(MainForm.btnModel) || MainForm.btnModel == "整班次模式")
                 {
-                    lastAnalyseTime_Alarm_Btn = "0";
+                    lastAnalyseTime_Btn = "0";
                     isNewVersion = false;
                 }
                 else
@@ -174,7 +174,7 @@ namespace Slac_DataAnalysis.FormPage
             }
             catch (Exception ex)
             {
-                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"获取数据库配置参数异常Error：{ex.ToString()}");
+                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn", $"获取数据库配置参数异常Error：{ex.ToString()}");
                 AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  获取数据库配置参数失败，请检查数据库配置！");
                 //DataReturnEvent?.Invoke("label3", $"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  获取数据库配置参数失败，请检查数据库配置！");
 
@@ -223,7 +223,7 @@ namespace Slac_DataAnalysis.FormPage
         }
 
         /// <summary>
-        /// 统计报警：开始处理
+        /// 统计按钮：开始处理
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -250,13 +250,13 @@ namespace Slac_DataAnalysis.FormPage
         {
             try
             {
-                if (!string.IsNullOrEmpty(lastAnalyseTime_Alarm_Btn))
+                if (!string.IsNullOrEmpty(lastAnalyseTime_Btn))
                 {
                     #region 分段模式下，根据上次分析时间，计算本次分析时间、班次，以及更新界面显示
                     DateTime dt;
-                    if (DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                    if (DateTime.TryParse(lastAnalyseTime_Btn, out dt))
                     {
-                        isNewVersion = true; // 默认能获取到lastAnalyseTime_Alarm_Btn，是新模式（分段）
+                        isNewVersion = true; // 默认能获取到lastAnalyseTime_Btn，是新模式（分段）
 
                         workdate = dt.Date.ToString("yyyy-MM-dd");
                         startTime = dt.ToString("yyyy-MM-dd HH:mm:ss");              // 开始时间
@@ -278,14 +278,11 @@ namespace Slac_DataAnalysis.FormPage
                         #endregion
                     }
                     else
-                    {
-                        //LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"获取数据库配置参数 lastAnalyseTime_Alarm_Btn 错误：{lastAnalyseTime_Alarm_Btn}不是时间格式！");
-                        //AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  获取数据库配置参数失败，{lastAnalyseTime_Alarm_Btn}不是时间格式！");
-
+                    {                        
                         #region 查询整个班次模式下，获取界面选择日期时间，班次，计算本次分析时间、班次
                         isNewVersion = false;
 
-                        // lastAnalyseTime_Alarm_Btn参数不是时间格式，则默认按照之前版本的逻辑（直接查询一个班次）获取时间
+                        // lastAnalyseTime_Btn参数不是时间格式，则默认按照之前版本的逻辑（直接查询一个班次）获取时间
                         workdate = Convert.ToDateTime(FetchMainFormSettingsInfoEvent?.Invoke("按钮开关分析时间")).Date.ToString("yyyy-MM-dd");
                         //workdate = dateTimePicker1.Value.Date.ToString("yyyy-MM-dd");
                         string shift = FetchMainFormSettingsInfoEvent?.Invoke("按钮开关分析班次").ToString();
@@ -309,32 +306,14 @@ namespace Slac_DataAnalysis.FormPage
                 }
                 else
                 {
-                    LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"获取界面日期、班次失败：{lastAnalyseTime_Alarm_Btn}");
+                    LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn", $"获取界面日期、班次失败：{lastAnalyseTime_Btn}");
                 }
-
-
-                #region 原代码注释
-                //workdate = Convert.ToDateTime(FetchMainFormSettingsInfoEvent?.Invoke("报警分析时间")).Date.ToString("yyyy-MM-dd");
-                ////workdate = dateTimePicker1.Value.Date.ToString("yyyy-MM-dd");
-                //string shift = FetchMainFormSettingsInfoEvent?.Invoke("报警分析班次").ToString();
-                //if (shift == "白班" /*comboBox1.Text == "白班"*/)
-                //{
-                //    startTime = workdate + " 00:00:00";
-                //    endTime = workdate + " 12:00:00";
-                //    workshift = "1";
-                //}
-                //else
-                //{
-                //    startTime = workdate + " 12:00:00";
-                //    endTime = Convert.ToDateTime(workdate).AddDays(1).ToString("yyyy-MM-dd") + " 00:00:00";
-                //    workshift = "0";
-                //} 
-                #endregion
+                
 
             }
             catch (Exception ex)
             {
-                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"获取界面日期、班次异常：{ex.Message}");
+                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn", $"获取界面日期、班次异常：{ex.Message}");
                 AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} 获取界面日期、班次异常");
             }
         }
@@ -349,7 +328,7 @@ namespace Slac_DataAnalysis.FormPage
         private async void timer1_Tick(object sender, EventArgs e)
         {
             try
-            {                
+            {
                 if (isProcessing || isAnalyzing)
                     return;  // 如果正在处理，跳过当前的事件
 
@@ -398,26 +377,26 @@ namespace Slac_DataAnalysis.FormPage
                         }
                         else
                         {
-                            // 新版本且不处于分析状态时，判断数据库最新报警信息时间是否大于上次分析时间+30分钟，大于则执行分析
+                            // 新版本且不处于分析状态时，判断数据库最新按钮信息时间是否大于上次分析时间+30分钟，大于则执行分析
                             if (isNewVersion && !isAnalyzing)
                             {
-                                // 查询数据库最新报警信息的时间（eventtime）
+                                // 查询数据库最新按钮信息的时间（eventtime）
                                 string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE eventtime >= '{DateTime.Now.AddHours(-8).Date}' and msg_id >=150 and msg_id <180 ORDER BY eventtime DESC LIMIT 100 ";
                                 string newEventtime = PostResponse(httpClientTimer, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
 
                                 List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
 
-                                DateTime newDbTime;// click house 数据库最新报警信息的时间
+                                DateTime newDbTime;// click house 数据库最新按钮信息的时间
                                 DateTime lastTime; // 上一次分析时间戳时间
 
                                 bool isStartExecl = false;
 
                                 if (Eventtime.Count == 100)
                                 {
-                                    // 遍历最新的五十条报警数据，如果存在一条报警时间小于上次分析时间+30分钟，则不执行分析
+                                    // 遍历最新的五十条按钮数据，如果存在一条按钮时间小于上次分析时间+30分钟，则不执行分析
                                     foreach (var item in Eventtime)
                                     {
-                                        if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                        if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Btn, out lastTime))
                                         {
                                             if (lastTime.AddMinutes(31) > newDbTime)
                                             {
@@ -435,33 +414,22 @@ namespace Slac_DataAnalysis.FormPage
                                     getTodayAndShift();
                                     isStartExec10 = true;
 
-                                    LogConfig.Intence.WriteLog("RunLog", "Alarm", $"最新{Eventtime.Count}条数据，大于上一次分析时间31分钟，开始下一次分析");
+                                    LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"最新{Eventtime.Count}条数据，大于上一次分析时间31分钟，开始下一次分析");
                                 }
 
                                 Eventtime.Clear();
-
-                                //if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
-                                //{
-                                //    if (lastTime.AddMinutes(30) < newDbTime)
-                                //    {
-
-                                //        //button2_Click(sender, e);
-                                //        getTodayAndShift();
-                                //        isStartExec10 = true;
-
-                                //    }
-                                //}
+                                
                             }
                         }
                     }
                 });
-                
+
 
                 isProcessing = false;  // 定时器处理结束
             }
             catch (Exception ex)
             {
-                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn_error", $"定时器异常：{ex.Message}\r\n");
+                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn_error", $"定时器异常：{ex.Message}\r\n");
             }
         }
 
@@ -472,7 +440,7 @@ namespace Slac_DataAnalysis.FormPage
         {
             while (thread10State)
             {
-                // 根据配置的device_16bit，分两种解析方式，查询clickhouse数据库 deviceid、msgid ，解析报警信息
+                // 根据配置的device_16bit，分两种解析方式，查询clickhouse数据库 deviceid、msgid ，解析按钮信息
                 if (isStartExec10)
                 {
                     isAnalyzing = true;     // 分析状态
@@ -484,7 +452,7 @@ namespace Slac_DataAnalysis.FormPage
                         stopwatch.Start();
 
                         AddListStr($"开始分析 {startTime} ~ {endTime} 时间段内数据  @ {DateTime.Now.ToString()}");
-                        LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"开始分析{startTime}~{endTime}时间段内数据");
+                        LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"开始分析{startTime}~{endTime}时间段内数据");
 
                         task16 = Task.Run(() =>
                         {
@@ -524,15 +492,15 @@ namespace Slac_DataAnalysis.FormPage
                                     //    break;
                                     //}
 
-                                    //LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"分析设备号{deviceid},msgid: {msgid} 的数据");
+                                    //LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"分析设备号{deviceid},msgid: {msgid} 的数据");
 
-                                    getErrorValueFromCH_16bit(line_id, deviceid, deviceid, msgid, cts.Token);  //个别机器的报警信息只计算16位
+                                    getErrorValueFromCH_16bit(line_id, deviceid, deviceid, msgid, cts.Token);  //个别机器的按钮信息只计算16位
 
                                     //
                                     //string[] list_16bit = device_16bit.Split(Convert.ToChar(","));
                                     //if (list_16bit.Contains(deviceid))
                                     //{
-                                    //    getErrorValueFromCH_16bit(line_id, deviceid, deviceid, msgid);  //个别机器的报警信息只计算16位
+                                    //    getErrorValueFromCH_16bit(line_id, deviceid, deviceid, msgid);  //个别机器的按钮信息只计算16位
                                     //}
                                     //else
                                     //{
@@ -543,7 +511,7 @@ namespace Slac_DataAnalysis.FormPage
                             catch (Exception ex)
                             {
                                 isRightAnalysis = false;
-                                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Task_Alarm_Btn", $"分析{startTime}~{endTime}时间段内数据，异步任务 task16 异常：{ex.ToString()}\r\n");
+                                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Task_Btn", $"分析{startTime}~{endTime}时间段内数据，异步任务 task16 异常：{ex.ToString()}\r\n");
                             }
                         }, cts.Token);
 
@@ -586,7 +554,7 @@ namespace Slac_DataAnalysis.FormPage
                                     //    break;
                                     //}
 
-                                    //LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"分析设备号{deviceid},msgid: {msgid} 的数据");
+                                    //LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"分析设备号{deviceid},msgid: {msgid} 的数据");
 
                                     getErrorValueFromCH(line_id, deviceid, deviceid, msgid, cts.Token);  //扬州会出现设备ID与采集ID不一致的情况
                                 }
@@ -595,7 +563,7 @@ namespace Slac_DataAnalysis.FormPage
                             catch (Exception ex)
                             {
                                 isRightAnalysis = false;
-                                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Task_Alarm_Btn", $"分析{startTime}~{endTime}时间段内数据，异步任务 task32 异常：{ex.ToString()}\r\n");
+                                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Task_Btn", $"分析{startTime}~{endTime}时间段内数据，异步任务 task32 异常：{ex.ToString()}\r\n");
                             }
                         }, cts.Token);
 
@@ -673,7 +641,7 @@ namespace Slac_DataAnalysis.FormPage
                         Task.WaitAll(task16, task32);
 
                         stopwatch.Stop();
-                        LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"分析{startTime}~{endTime}时间段内数据，耗费时间：{stopwatch.Elapsed.TotalSeconds}");
+                        LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"分析{startTime}~{endTime}时间段内数据，耗费时间：{stopwatch.Elapsed.TotalSeconds}");
 
 
                         #region 两种分析模式下，结束一次分析后，执行不同处理逻辑
@@ -685,7 +653,7 @@ namespace Slac_DataAnalysis.FormPage
                             {
                                 if (isNewVersion)
                                 {
-                                    // 查询数据库最新报警信息的时间（eventtime字段）
+                                    // 查询数据库最新按钮信息的时间（eventtime字段）
                                     string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE eventtime >='{DateTime.Now.AddHours(-8).Date}' and msg_id >=150 and msg_id <180 ORDER BY eventtime DESC LIMIT 100 ";
 
                                     string newEventtime = string.Empty;
@@ -697,7 +665,7 @@ namespace Slac_DataAnalysis.FormPage
 
                                     List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
 
-                                    DateTime newDbTime; // click house 数据库最新报警信息的时间
+                                    DateTime newDbTime; // click house 数据库最新按钮信息的时间
                                     DateTime lastTime;  // 上一次分析时间戳时间
 
                                     // 判断是否需要更新上次分析时间戳，继续下一个时间段分析
@@ -706,7 +674,7 @@ namespace Slac_DataAnalysis.FormPage
                                     {
                                         foreach (var item in Eventtime)
                                         {
-                                            if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                            if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Btn, out lastTime))
                                             {
                                                 if (lastTime.AddMinutes(31) > newDbTime)
                                                 {
@@ -721,69 +689,37 @@ namespace Slac_DataAnalysis.FormPage
                                     if (isContinueNext)
                                     {
                                         // 一次分析完成，更新上次分析时间戳（加半小时）
-                                        string newlastAnalyseTime_Alarm_Btn = endTime;
+                                        string newlastAnalyseTime_Btn = endTime;
                                         DBOper.Init();
                                         DBOper db = new DBOper();
-                                        int result = db.UpdateLastAnalyseTime(newlastAnalyseTime_Alarm_Btn, "lastAnalyseTime_Alarm_Btn");
+                                        int result = db.UpdateLastAnalyseTime(newlastAnalyseTime_Btn, "lastAnalyseTime_Btn");
                                         if (result == 1)
                                         {
                                             DateTime.UtcNow.ToString();
-                                            AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
-                                            LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳成功：{newlastAnalyseTime_Alarm_Btn}\r\n");
+                                            AddListStr($"UTC时间段 {startTime}-{endTime} 内按钮分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
+                                            LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"更新上次分析时间戳成功：{newlastAnalyseTime_Btn}\r\n");
 
-                                            // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime_Alarm_Btn
+                                            // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime_Btn
                                             DBSystemConfig dbSystemConfig = new DBSystemConfig();
-                                            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime_Alarm_Btn'");
-                                            lastAnalyseTime_Alarm_Btn = list[0].Value;
+                                            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime_Btn'");
+                                            lastAnalyseTime_Btn = list[0].Value;
                                         }
                                         else
                                         {
                                             isInitRedis = true;
-                                            LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳失败：{newlastAnalyseTime_Alarm_Btn}\r\n");
+                                            LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn", $"更新上次分析时间戳失败：{newlastAnalyseTime_Btn}\r\n");
                                             AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
                                         }
                                     }
-
-                                    #region 注释
-                                    //if (DateTime.TryParse(newEventtime.Replace("\n", ""), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
-                                    //{
-                                    //    // 判断是否需要更新上次分析时间戳
-                                    //    if (lastTime.AddMinutes(30) < newDbTime)
-                                    //    {
-                                    //        // 一次分析完成，更新上次分析时间戳（加半小时）
-                                    //        string newlastAnalyseTime_Alarm_Btn = endTime;
-                                    //        DBOper.Init();
-                                    //        DBOper db = new DBOper();
-                                    //        int result = db.UpdateLastAnalyseTime(newlastAnalyseTime_Alarm_Btn, "lastAnalyseTime_Alarm_Btn");
-                                    //        if (result == 1)
-                                    //        {
-                                    //            DateTime.UtcNow.ToString();
-                                    //            AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
-                                    //            LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳成功：{newlastAnalyseTime_Alarm_Btn}\r\n");
-
-                                    //            // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime_Alarm_Btn
-                                    //            DBSystemConfig dbSystemConfig = new DBSystemConfig();
-                                    //            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime_Alarm_Btn'");
-                                    //            lastAnalyseTime_Alarm_Btn = list[0].Value;
-                                    //        }
-                                    //        else
-                                    //        {
-                                    //            LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"更新上次分析时间戳失败：{newlastAnalyseTime_Alarm_Btn}\r\n");
-                                    //            AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
-                                    //        }
-
-                                    //    }
-                                    //} 
-
-                                    #endregion
+                                    
                                     isStartExec10 = false;
                                     isAnalyzing = false;
                                 }
                                 else
                                 {
                                     // 旧版本(查询一整个班次数据分析),结束后判断若不是当天，则继续查询分析下一个班次数据
-                                    AddListStr($"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
-                                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"{workdate} & {workshift} ------ 报警分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
+                                    AddListStr($"{workdate} & {workshift} ------ 按钮分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
+                                    LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"{workdate} & {workshift} ------ 按钮分析处理完成 @ " + DateTime.Now.ToString() + " ------\r\n");
                                     // isAnalyzing = false;                            
 
                                     DateTime ds, de;
@@ -792,7 +728,7 @@ namespace Slac_DataAnalysis.FormPage
                                     DateTime nowTime = DateTime.Now.ToUniversalTime(); // 当前UTC时间
                                     if (de < nowTime)
                                     {
-                                        LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"前startTime：{startTime}，前endTime：{endTime} 后startTime：{ds.AddHours(12).ToString()}，后endTime：{de.AddHours(12).ToString()}");
+                                        LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"前startTime：{startTime}，前endTime：{endTime} 后startTime：{ds.AddHours(12).ToString()}，后endTime：{de.AddHours(12).ToString()}");
 
                                         startTime = ds.AddHours(12).ToString();
                                         endTime = de.AddHours(12).ToString();
@@ -827,7 +763,7 @@ namespace Slac_DataAnalysis.FormPage
                             {
                                 isAnalyzing = false;
                                 isInitRedis = true;
-                                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"分析{startTime}~{endTime}时间段内数据，存在异常：{ex.Message}");
+                                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn", $"分析{startTime}~{endTime}时间段内数据，存在异常：{ex.Message}");
                             }
                         }
                         else
@@ -835,7 +771,7 @@ namespace Slac_DataAnalysis.FormPage
                             isAnalyzing = false;
                             isInitRedis = true; // 一个时间段结束，若需要重新分析，则重置该时间段的 Redis 键值
 
-                            LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"分析{startTime}~{endTime}时间段内数据，分析时存在报错或手动停止，需要重新分析");
+                            LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn", $"分析{startTime}~{endTime}时间段内数据，分析时存在报错或手动停止，需要重新分析");
                         }
 
 
@@ -847,7 +783,7 @@ namespace Slac_DataAnalysis.FormPage
                     }
                     catch (Exception ex)
                     {
-                        LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Task_Alarm_Btn", $"{ex.ToString()}\r\n");
+                        LogConfig.Intence.WriteLog("ErrLog\\Btn", "Task_Btn", $"{ex.ToString()}\r\n");
                         // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + "_error10.log", ex.ToString() + DateTime.Now.ToString() + "\r\n");
                     }
                 }
@@ -860,15 +796,15 @@ namespace Slac_DataAnalysis.FormPage
         }
 
         /// <summary>
-        /// 解析报警信息（解析32位数据）
+        /// 解析按钮信息（解析32位数据）
         /// </summary>
         /// <param name="lineID"></param>
         /// <param name="deviceID"></param>
-        /// <param name="FromdeviceID"></param>
+        /// <param name="fromdeviceID"></param>
         /// <param name="msgID"></param>
-        private void getErrorValueFromCH(string lineID, string deviceID, string FromdeviceID, string msgID, CancellationToken token)
+        private void getErrorValueFromCH(string lineID, string deviceID, string fromdeviceID, string msgID, CancellationToken token)
         {
-            //统计报警信息的msg，哪些发生了变化
+            //统计按钮信息的msg，哪些发生了变化
 
             Stopwatch watch = new Stopwatch();
             watch.Start();
@@ -883,12 +819,12 @@ namespace Slac_DataAnalysis.FormPage
                 client.Db = Convert.ToInt32(lineID.Substring(lineID.Length - 2)); //根据线体号选择数据库 0-15
 
                 StringBuilder SqlString = new StringBuilder("");
-                string sqlhead = "insert into " + lineID + "_alarm_btn (workdate,workshift,line_id,device_id,msg_id,pv,lpv,diffv,pt,lpt,indate) values ";
+                string sqlhead = "insert into " + lineID + "_btn (workdate,workshift,line_id,device_id,msg_id,pv,lpv,diffv,pt,lpt,indate) values ";
                 SqlString = new StringBuilder(sqlhead);
                 int Lcount = 0;
 
                 string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + lineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
-                 + "' and device_id =" + FromdeviceID + " and msg_id =" + msgID + " order by eventtime  ";
+                 + "' and device_id =" + fromdeviceID + " and msg_id =" + msgID + " order by eventtime  ";
 
                 byte[] postData = Encoding.ASCII.GetBytes(ssql.ToString());
                 string strResult = PostResponse(httpClient32, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", ssql.ToString());
@@ -942,28 +878,28 @@ namespace Slac_DataAnalysis.FormPage
 
                     initValue = Convert.ToInt32(string.Join("", listLastKeyValue), 2);
 
-                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID} 上一次值：{initValue}");
+                    LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID} 上一次值：{initValue}");
                     #endregion
 
                     lastValue32 = initValue;
 
-                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", $"Alarm_time{deviceID}", $"分析 {startTime}~{endTime} 时间段内，设备号{deviceID}，msgID {msgID} 查询数据数量：{strArray.Count()}");
+                    LogConfig.Intence.WriteLog("RunLog\\Btn", $"Btn_time{deviceID}", $"分析 {startTime}~{endTime} 时间段内，设备号{deviceID}，msgID {msgID} 查询数据数量：{strArray.Count()}");
 
                     sc.Stop();
-                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环前查询耗时：{sc.ElapsedMilliseconds}");
+                    LogConfig.Intence.WriteLog("RunLog\\Btn", $"Btn_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环前查询耗时：{sc.ElapsedMilliseconds}");
 
 
                     //测试
                     Stopwatch se = new Stopwatch();
                     se.Start();
 
-                    int valueChange = 0; // 统计报警信息msgID变化次数
+                    int valueChange = 0; // 统计按钮信息msgID变化次数
 
                     for (int i = 0; i < strArray.Count(); i++)
                     {
                         if (token.IsCancellationRequested)
                         {
-                            LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", "32位解析break跳出");
+                            LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", "32位解析break跳出");
                             break;
                         }
 
@@ -976,11 +912,6 @@ namespace Slac_DataAnalysis.FormPage
                         {
                             valueChange++;
 
-                            //if (deviceID.Equals("18"))
-                            //{
-                            //    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_value", $"设备号{deviceID}{msgID}:nowValue:{nowValue},lastValue:{lastValue}");
-                            //}
-
                             int xorValue = nowValue ^ lastValue32;
                             string binStr = Convert.ToString(xorValue, 2).PadLeft(32, '0');
 
@@ -989,12 +920,12 @@ namespace Slac_DataAnalysis.FormPage
                             if (isNewVersion)
                             {
                                 // 分段查询处理模式，根据时间段更新看板服务器数据库 _bit表
-                                ssqlDel = $"delete from {lineID}_alarm_btn where pt >= '{startTime}' and pt < '{endTime}' and workdate = '{workdate}' and workshift = '{workshift}' and line_id = '{lineID}' and device_id = '{deviceID}' and msg_id like '{msgID}%'";
+                                ssqlDel = $"delete from {lineID}_btn where pt >= '{startTime}' and pt < '{endTime}' and workdate = '{workdate}' and workshift = '{workshift}' and line_id = '{lineID}' and device_id = '{deviceID}' and msg_id like '{msgID}%'";
                             }
                             else
                             {
                                 // 班次查询处理模式，根据班次更新看板服务器数据库 _bit表
-                                ssqlDel = "delete from " + lineID + "_alarm_btn where workdate='" + workdate + "' and workshift='" + workshift + "'  and line_id='" + lineID + "' and device_id='" + deviceID + "' and msg_id like '" + msgID + "%'";
+                                ssqlDel = "delete from " + lineID + "_btn where workdate='" + workdate + "' and workshift='" + workshift + "'  and line_id='" + lineID + "' and device_id='" + deviceID + "' and msg_id like '" + msgID + "%'";
                             }
 
                             int execCount = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssqlDel);
@@ -1046,12 +977,12 @@ namespace Slac_DataAnalysis.FormPage
 
                                 if (Lcount > 1000)
                                 {
-                                    //LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Stats32", "32位解析：每一千条数据上传数据库开始");
+                                    //LogConfig.Intence.WriteLog("RunLog\\Btn", "Stats32", "32位解析：每一千条数据上传数据库开始");
                                     string ssql2 = SqlString.Remove(SqlString.Length - 1, 1).ToString();
                                     int aa = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssql2);
                                     SqlString = new StringBuilder(sqlhead);
                                     Lcount = 0;
-                                    //LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Stats32", "32位解析：每一千条数据上传数据库完成");
+                                    //LogConfig.Intence.WriteLog("RunLog\\Btn", "Stats32", "32位解析：每一千条数据上传数据库完成");
 
                                 }
                             }
@@ -1064,10 +995,10 @@ namespace Slac_DataAnalysis.FormPage
                         }
                     }
 
-                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 报警变化次数：{valueChange}");
+                    LogConfig.Intence.WriteLog("RunLog\\Btn", $"Btn_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 按钮变化次数：{valueChange}");
 
                     se.Stop();
-                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环整体耗时：{se.ElapsedMilliseconds}\r\n");
+                    LogConfig.Intence.WriteLog("RunLog\\Btn", $"Btn_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 循环整体耗时：{se.ElapsedMilliseconds}\r\n");
 
                 }
                 watch.Stop();
@@ -1080,12 +1011,12 @@ namespace Slac_DataAnalysis.FormPage
                     ////System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd_") + ".log", ssql2.ToString() + DateTime.Now.ToString() + "\r\n");
                     int aa = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssql2);
 
-                    // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + ".log", workdate + " & " + workshift + " & " + deviceID + "." + msgID + "报警信息处理完成！" + " @ " + DateTime.Now.ToString() + "\r\n");
+                    // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + ".log", workdate + " & " + workshift + " & " + deviceID + "." + msgID + "按钮信息处理完成！" + " @ " + DateTime.Now.ToString() + "\r\n");
 
-                    //LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Stats32", "32位解析：不满一千调数据上传数据库完成");
+                    //LogConfig.Intence.WriteLog("RunLog\\Btn", "Stats32", "32位解析：不满一千调数据上传数据库完成");
                 }
 
-                AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 报警信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
+                AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 按钮信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
 
             }
             catch (ThreadAbortException) // 线程中止异常
@@ -1095,22 +1026,22 @@ namespace Slac_DataAnalysis.FormPage
             catch (Exception ex)
             {
                 isRightAnalysis = false; // 设置异常标志,这个时间段需要重新分析
-                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_error", $"deviceID:{deviceID}，msgID:{msgID} 异常：{ex.ToString()}\r\n");
+                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn_error", $"deviceID:{deviceID}，msgID:{msgID} 异常：{ex.ToString()}\r\n");
 
-                AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} 出错了！请查看 Alarm_error日志");
+                AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} 出错了！请查看 Btn_error日志");
             }
         }
 
         /// <summary>
-        /// 解析报警信息（解析16位数据）
+        /// 解析按钮信息（解析16位数据）
         /// </summary>
         /// <param name="lineID"></param>
         /// <param name="deviceID"></param>
-        /// <param name="FromdeviceID"></param>
+        /// <param name="fromdeviceID"></param>
         /// <param name="msgID"></param>
-        private void getErrorValueFromCH_16bit(string lineID, string deviceID, string FromdeviceID, string msgID, CancellationToken token)
+        private void getErrorValueFromCH_16bit(string lineID, string deviceID, string fromdeviceID, string msgID, CancellationToken token)
         {
-            //统计报警信息的msg，哪些发生了变化
+            //统计按钮信息的msg，哪些发生了变化
 
             Stopwatch watch = new Stopwatch();
             watch.Start();
@@ -1123,15 +1054,15 @@ namespace Slac_DataAnalysis.FormPage
 
                 // 初始化sql语句以及提交数据量（插入看板服务器mysql数据库）
                 StringBuilder SqlString = new StringBuilder("");
-                string sqlhead = "insert into " + lineID + "_alarm_btn (workdate,workshift,line_id,device_id,msg_id,pv,lpv,diffv,pt,lpt,indate) values ";
+                string sqlhead = "insert into " + lineID + "_btn (workdate,workshift,line_id,device_id,msg_id,pv,lpv,diffv,pt,lpt,indate) values ";
                 SqlString = new StringBuilder(sqlhead);
                 int Lcount = 0;
 
-                // 获取clickhouse数据库报警信息
+                // 获取clickhouse数据库按钮信息
                 /// 根据device_id，msg_id 查询一个班次内的 eventtime 和 msg_bit（运算得出）
                 /// data 和 （1768515945-device_id*msg_id）的值 ，使用 bitXor 操作进行 按位异或 运算，得到 msg_bit
                 string ssql = " SELECT eventtime,bitXor(`data` , 1768515945-device_id*msg_id) as msg_bit from " + companyNum + "." + lineID + CHtable_name + " l where eventtime >= '" + startTime + "' and eventtime< '" + endTime
-                 + "' and device_id =" + FromdeviceID + " and msg_id =" + msgID + " order by eventtime  ";
+                 + "' and device_id =" + fromdeviceID + " and msg_id =" + msgID + " order by eventtime  ";
 
                 byte[] postData = Encoding.ASCII.GetBytes(ssql.ToString());
                 string strResult = PostResponse(httpClient16, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", ssql.ToString());
@@ -1184,12 +1115,12 @@ namespace Slac_DataAnalysis.FormPage
                     }
 
                     initValue = Convert.ToInt32(string.Join("", listLastKeyValue), 2);
-                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID} 上一次值：{initValue}");
+                    LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID} 上一次值：{initValue}");
 
                     #endregion
                     lastValue16 = initValue;
 
-                    int valueChange = 0; //记录报警msgID变化次数
+                    int valueChange = 0; //记录按钮msgID变化次数
 
                     for (int i = 0; i < strArray.Count(); i++)
                     {
@@ -1220,12 +1151,12 @@ namespace Slac_DataAnalysis.FormPage
                             if (isNewVersion)
                             {
                                 // 分段查询处理模式，根据时间段更新看板服务器数据库 _bit表
-                                ssqlDel = $"delete from {lineID}_alarm_btn where pt >= '{startTime}' and pt < '{endTime}' and workdate = '{workdate}' and workshift = '{workshift}' and line_id = '{lineID}' and device_id = '{deviceID}' and msg_id like '{msgID}%'";
+                                ssqlDel = $"delete from {lineID}_btn where pt >= '{startTime}' and pt < '{endTime}' and workdate = '{workdate}' and workshift = '{workshift}' and line_id = '{lineID}' and device_id = '{deviceID}' and msg_id like '{msgID}%'";
                             }
                             else
                             {
                                 // 班次查询处理模式，根据班次更新看板服务器数据库 _bit表
-                                ssqlDel = "delete from " + lineID + "_alarm_btn where workdate='" + workdate + "' and workshift='" + workshift + "'  and line_id='" + lineID + "' and device_id='" + deviceID + "' and msg_id like '" + msgID + "%'";
+                                ssqlDel = "delete from " + lineID + "_btn where workdate='" + workdate + "' and workshift='" + workshift + "'  and line_id='" + lineID + "' and device_id='" + deviceID + "' and msg_id like '" + msgID + "%'";
                             }
 
                             int execCount = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssqlDel);
@@ -1252,8 +1183,10 @@ namespace Slac_DataAnalysis.FormPage
                                         client.Set("k" + deviceID + "." + msgID + "." + xy.ToString(), result.ToString() + "@" + strBit[0]);
                                         //System.IO.File.AppendAllText(DateTime.Now.ToString("yyyyMMdd_") + ".log", "k" + msgID + "." + x.ToString() + " ,last: " + lastStrBit[0] + ",lastTime=" + lastStrBit[1] + ",now: " + result.ToString() + ",NowTime=" + strBit[0] + "\n");
 
+                                        double diffv = (Convert.ToDateTime(strBit[0]) - Convert.ToDateTime(lastStrBit[1])).TotalSeconds; // 时间差
+
                                         SqlString.Append($"('{workdate}','{workshift}','{lineID}','{deviceID}','{msgID}.{xy}','{result}','{lastStrBit[0]}'," +
-                                                         $"'{Math.Round((Convert.ToDateTime(strBit[0]) - Convert.ToDateTime(lastStrBit[1])).TotalSeconds)}'," +
+                                                         $"'{diffv}'," +
                                                          $"'{strBit[0]}','{lastStrBit[1]}',now()),");
 
                                         //SqlString.Append("('" + workdate + "','" + workshift + "','" + lineID + "','" + deviceID + "','" + msgID + "." + xy.ToString() + "','" + result.ToString() + "','" + lastStrBit[0] + "','" + Math.Round((Convert.ToDateTime(strBit[0]) - Convert.ToDateTime(lastStrBit[1])).TotalSeconds).ToString() + "','" + strBit[0] + "','" + lastStrBit[1] + "',now()),");                                       
@@ -1262,7 +1195,7 @@ namespace Slac_DataAnalysis.FormPage
                                     }
                                 }
 
-                                // 报警信息存入看板服务器数据库，1000条存一次
+                                // 按钮信息存入看板服务器数据库，1000条存一次
                                 if (Lcount > 1000)
                                 {
                                     string ssql2 = SqlString.Remove(SqlString.Length - 1, 1).ToString();
@@ -1280,7 +1213,7 @@ namespace Slac_DataAnalysis.FormPage
                         }
                     }
 
-                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", $"Alarm_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 报警变化次数：{valueChange}");
+                    LogConfig.Intence.WriteLog("RunLog\\Btn", $"Btn_time{deviceID}", $"设备号{deviceID}，msgID {msgID} 按钮变化次数：{valueChange}");
 
                 }
                 watch.Stop();
@@ -1291,10 +1224,10 @@ namespace Slac_DataAnalysis.FormPage
                     ////System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd_") + ".log", ssql2.ToString() + DateTime.Now.ToString() + "\r\n");
                     int aa = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssql2);
 
-                    // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + ".log", workdate + " & " + workshift + " & " + deviceID + "." + msgID + "报警信息处理完成！" + " @ " + DateTime.Now.ToString() + "\r\n");
+                    // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + ".log", workdate + " & " + workshift + " & " + deviceID + "." + msgID + "按钮信息处理完成！" + " @ " + DateTime.Now.ToString() + "\r\n");
                 }
 
-                AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 报警信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
+                AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 按钮信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
 
             }
             catch (ThreadAbortException) // 线程中止异常
@@ -1305,9 +1238,9 @@ namespace Slac_DataAnalysis.FormPage
             {
                 isRightAnalysis = false; // 设置异常标志,这个时间段需要重新分析                
 
-                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_error", $"deviceID:{deviceID}，msgID:{msgID} 异常：{ex.ToString()}\r\n");
+                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Btn_error", $"deviceID:{deviceID}，msgID:{msgID} 异常：{ex.ToString()}\r\n");
 
-                AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} 出错了！请查看 Alarm_error日志");
+                AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} 出错了！请查看 Btn_error日志");
 
             }
         }
@@ -1371,7 +1304,7 @@ namespace Slac_DataAnalysis.FormPage
         /// <param name="output"></param>
         private void AddListStr(string output)
         {
-            if (!checkBox_Alarm.Checked)
+            if (!checkBox_Btn.Checked)
             {
                 if (!this.IsDisposed && this.IsHandleCreated)
                 {
@@ -1403,10 +1336,10 @@ namespace Slac_DataAnalysis.FormPage
             //listBox1.Location = new Point(10, comboBox1.Location.Y + comboBox1.Height + 20);
 
             label1.Location = new Point(10, 10);
-            checkBox_Alarm.Location = new Point(this.Width - 15 - checkBox_Alarm.Width, 10);
+            checkBox_Btn.Location = new Point(this.Width - 15 - checkBox_Btn.Width, 10);
 
-            listBox1.Height = this.Height - (checkBox_Alarm.Height + checkBox_Alarm.Location.Y);
-            listBox1.Location = new Point(0, checkBox_Alarm.Location.Y + checkBox_Alarm.Height + 5);
+            listBox1.Height = this.Height - (checkBox_Btn.Height + checkBox_Btn.Location.Y);
+            listBox1.Location = new Point(0, checkBox_Btn.Location.Y + checkBox_Btn.Height + 5);
         }
 
         /// <summary>
@@ -1416,7 +1349,7 @@ namespace Slac_DataAnalysis.FormPage
         {
             try
             {
-                LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"Task16、Task32开始关闭：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
+                LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"Task16、Task32开始关闭：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
                 cts.Cancel();
 
                 thread10State = false; // 停止线程               
@@ -1449,7 +1382,7 @@ namespace Slac_DataAnalysis.FormPage
                         await Task.WhenAll(task16, task32);
                     }
 
-                    LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"Task16、Task32结束关闭：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
+                    LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"Task16、Task32结束关闭：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
 
                     if (task16.Status == TaskStatus.RanToCompletion && task32.Status == TaskStatus.RanToCompletion)
                     {
@@ -1459,7 +1392,7 @@ namespace Slac_DataAnalysis.FormPage
                         task32 = null;
                         cts.Dispose();
                         cts = null;
-                        LogConfig.Intence.WriteLog("RunLog\\Alarm_Btn", "Alarm_Btn", $"Task16、Task32释放资源成功：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}\r\n");
+                        LogConfig.Intence.WriteLog("RunLog\\Btn", "Btn", $"Task16、Task32释放资源成功：{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")}\r\n");
                     }
                 }
 
@@ -1470,7 +1403,7 @@ namespace Slac_DataAnalysis.FormPage
             }
             catch (Exception ex)
             {
-                LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Task", $"停止解析异常：{ex.Message}");
+                LogConfig.Intence.WriteLog("ErrLog\\Btn", "Task", $"停止解析异常：{ex.Message}");
             }
         }
     }

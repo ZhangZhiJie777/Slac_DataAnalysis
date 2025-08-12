@@ -1,6 +1,6 @@
 ﻿namespace Slac_DataAnalysis.FormPage
 {
-    partial class frm_main_yzyl_bit_alarm_btn
+    partial class frm_main_yzyl_bit_btn
     {
         /// <summary> 
         /// 必需的设计器变量。
@@ -30,7 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             this.listBox1 = new System.Windows.Forms.ListBox();
-            this.checkBox_Alarm = new System.Windows.Forms.CheckBox();
+            this.checkBox_Btn = new System.Windows.Forms.CheckBox();
             this.button2 = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
@@ -46,16 +46,16 @@
             this.listBox1.Size = new System.Drawing.Size(1106, 564);
             this.listBox1.TabIndex = 26;
             // 
-            // checkBox_Alarm
+            // checkBox_Btn
             // 
-            this.checkBox_Alarm.AutoSize = true;
-            this.checkBox_Alarm.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.checkBox_Alarm.Location = new System.Drawing.Point(936, 24);
-            this.checkBox_Alarm.Name = "checkBox_Alarm";
-            this.checkBox_Alarm.Size = new System.Drawing.Size(162, 20);
-            this.checkBox_Alarm.TabIndex = 36;
-            this.checkBox_Alarm.Text = "是否暂停日志刷新";
-            this.checkBox_Alarm.UseVisualStyleBackColor = true;
+            this.checkBox_Btn.AutoSize = true;
+            this.checkBox_Btn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.checkBox_Btn.Location = new System.Drawing.Point(936, 24);
+            this.checkBox_Btn.Name = "checkBox_Btn";
+            this.checkBox_Btn.Size = new System.Drawing.Size(162, 20);
+            this.checkBox_Btn.TabIndex = 36;
+            this.checkBox_Btn.Text = "是否暂停日志刷新";
+            this.checkBox_Btn.UseVisualStyleBackColor = true;
             // 
             // button2
             // 
@@ -84,16 +84,16 @@
             this.timer1.Interval = 1000;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
-            // frm_main_yzyl_bit_alarm_btn
+            // frm_main_yzyl_bit_btn
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.Controls.Add(this.label1);
             this.Controls.Add(this.button2);
-            this.Controls.Add(this.checkBox_Alarm);
+            this.Controls.Add(this.checkBox_Btn);
             this.Controls.Add(this.listBox1);
-            this.Name = "frm_main_yzyl_bit_alarm_btn";
+            this.Name = "frm_main_yzyl_bit_btn";
             this.Size = new System.Drawing.Size(1112, 628);
             this.Load += new System.EventHandler(this.frm_main_Load);
             this.Resize += new System.EventHandler(this.frm_main_yzyl_bit_Resize);
@@ -105,7 +105,7 @@
         #endregion
 
         private System.Windows.Forms.ListBox listBox1;
-        private System.Windows.Forms.CheckBox checkBox_Alarm;
+        private System.Windows.Forms.CheckBox checkBox_Btn;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Timer timer1;

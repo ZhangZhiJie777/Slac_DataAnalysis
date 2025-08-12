@@ -1449,8 +1449,19 @@ namespace Slac_DataAnalysis
         /// </summary>
         public void button2_Click(object sender, EventArgs e)
         {
-            getTodayAndShift();
-            isStartExec10 = true;
+            if (!isAnalyzing)
+            {
+                getTodayAndShift();
+                isStartExec10 = true;
+
+                AddListStr("开始处理！ " + DateTime.Now.ToString());
+
+            }
+            else
+            {
+                AddListStr("正在处理中，请稍后！ " + DateTime.Now.ToString());
+            }
+                
 
         }
 
