@@ -466,7 +466,8 @@ namespace Slac_DataAnalysis.FormPage
 
                                 string ssql_12 = $"select distinct device_id,msg_id FROM {companyNum}.{line_id}{CHtable_name} " +
                                                     $"WHERE eventtime >='{startTime}' and eventtime<'{endTime}' " +
-                                                    $"and device_id in({device_16bit}) and msg_id >=150 and msg_id <199 " +
+                                                    $"and device_id in({device_16bit}) " +
+                                                    $"and ((msg_id =0) or (msg_id >=150 and msg_id <199)) " +
                                                     $"order by device_id,msg_id ";
 
                                 string msgIDlist = string.Empty;
@@ -526,7 +527,8 @@ namespace Slac_DataAnalysis.FormPage
 
                                 string ssql_other = $"select distinct device_id,msg_id FROM {companyNum}.{line_id}{CHtable_name} " +
                                                     $"WHERE eventtime >='{startTime}' and eventtime<'{endTime}' " +
-                                                    $"and device_id not in({device_16bit}) and msg_id >=150 and msg_id <199 " +
+                                                    $"and device_id not in({device_16bit}) " +
+                                                    $"and ((msg_id =0) or (msg_id >=150 and msg_id <199)) " +
                                                     $"order by device_id,msg_id ";
 
                                 string msgIDlist_other = string.Empty;
