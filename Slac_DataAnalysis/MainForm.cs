@@ -30,7 +30,7 @@ namespace Slac_DataAnalysis
         private static string line_id = string.Empty; // 线体号
 
         private volatile string lastAnalyseTime;           // 上一个时间段分析开始时间
-        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮开关）
+        private volatile string lastAnalyseTime_Btn; // 上一个时间段分析开始时间（按钮开关）
         private volatile string lastAnalyseTime_Device_State; // 上一个时间段分析开始时间（设备状态）
 
         private static string Alarm_Permissions;        // 是否启用报警分析
@@ -67,7 +67,7 @@ namespace Slac_DataAnalysis
                 lastAnalyseTime = list.Find(e => e.Name.Trim() == "lastAnalyseTime").Value.Trim();
 
                 // 上一次按钮开关分析时间
-                lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
+                lastAnalyseTime_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Btn").Value.Trim();
 
                 // 上一次设备状态分析时间
                 lastAnalyseTime_Device_State = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Device_State").Value.Trim();
@@ -385,7 +385,7 @@ namespace Slac_DataAnalysis
 
                 GetParamConfig();
                 DateTime dt;
-                if (!DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                if (!DateTime.TryParse(lastAnalyseTime_Btn, out dt))
                 {
                     radioButton_Alarm_Btn_Sub.Checked = false;
                     radioButton_Alarm_Btn_Shift.Checked = true;
@@ -1030,7 +1030,7 @@ namespace Slac_DataAnalysis
             {
                 GetParamConfig();
                 DateTime dt;
-                if (!DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                if (!DateTime.TryParse(lastAnalyseTime_Btn, out dt))
                 {
                     radioButton_Alarm_Btn_Sub.Checked = false;
                     radioButton_Alarm_Btn_Shift.Checked = true;

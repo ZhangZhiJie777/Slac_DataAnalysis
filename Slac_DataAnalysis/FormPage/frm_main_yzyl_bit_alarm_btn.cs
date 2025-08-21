@@ -59,7 +59,7 @@ namespace Slac_DataAnalysis.FormPage
 
         private volatile bool isAnalyzing;                 // 是否正在分析
         //private volatile string lastAnalyseTime;           // 上一个时间段分析开始时间
-        private volatile string lastAnalyseTime_Alarm_Btn; // 上一个时间段分析开始时间（按钮开关）
+        private volatile string lastAnalyseTime_Btn; // 上一个时间段分析开始时间（按钮开关）
         private volatile bool isNewVersion = false;        // 是否是最新版本(true:最新版本,采用标志位时间戳，分段分析  false:不是最新版本，直接分析整个班次) 在获取lastAnalyseTime_Alarm_Btn参数成功的情况下，默认是最新版本
         private volatile bool isRightAnalysis = true;      // 这次分析是否是正常分析流程（表示这个时间段需要重新分析）
         private volatile bool isInitRedis = false;         // 是否初始化Redis的键值（若当前时间段有报错，重新分析，需要重置Redis）
@@ -142,21 +142,21 @@ namespace Slac_DataAnalysis.FormPage
                 RedisPasswd = list.Find(e => e.Name.Trim() == "RedisServer").Value.Trim().Split('|')[2];
 
                 // 上一次按钮开关分析时间
-                lastAnalyseTime_Alarm_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Alarm_Btn").Value.Trim();
+                lastAnalyseTime_Btn = list.Find(e => e.Name.Trim() == "lastAnalyseTime_Btn").Value.Trim();
 
                 // 分段模式下，初始化为班次开始时间
-                if (!string.IsNullOrEmpty(lastAnalyseTime_Alarm_Btn) && lastAnalyseTime_Alarm_Btn.Length == 19)
+                if (!string.IsNullOrEmpty(lastAnalyseTime_Btn) && lastAnalyseTime_Btn.Length == 19)
                 {
                     DateTime dt;
-                    if (DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                    if (DateTime.TryParse(lastAnalyseTime_Btn, out dt))
                     {
                         if (dt.Hour < 12)
                         {
-                            lastAnalyseTime_Alarm_Btn = lastAnalyseTime_Alarm_Btn.Substring(0, 11) + "00:00:00";
+                            lastAnalyseTime_Btn = lastAnalyseTime_Btn.Substring(0, 11) + "00:00:00";
                         }
                         else
                         {
-                            lastAnalyseTime_Alarm_Btn = lastAnalyseTime_Alarm_Btn.Substring(0, 11) + "12:00:00";
+                            lastAnalyseTime_Btn = lastAnalyseTime_Btn.Substring(0, 11) + "12:00:00";
                         }
                     }
                 }
@@ -164,7 +164,7 @@ namespace Slac_DataAnalysis.FormPage
                 // 判断界面选择，整班次模式还是分段模式
                 if (string.IsNullOrEmpty(MainForm.alarm_Btn_Model) || MainForm.alarm_Btn_Model == "整班次模式")
                 {
-                    lastAnalyseTime_Alarm_Btn = "0";
+                    lastAnalyseTime_Btn = "0";
                     isNewVersion = false;
                 }
                 else
@@ -250,11 +250,11 @@ namespace Slac_DataAnalysis.FormPage
         {
             try
             {
-                if (!string.IsNullOrEmpty(lastAnalyseTime_Alarm_Btn))
+                if (!string.IsNullOrEmpty(lastAnalyseTime_Btn))
                 {
                     #region 分段模式下，根据上次分析时间，计算本次分析时间、班次，以及更新界面显示
                     DateTime dt;
-                    if (DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out dt))
+                    if (DateTime.TryParse(lastAnalyseTime_Btn, out dt))
                     {
                         isNewVersion = true; // 默认能获取到lastAnalyseTime_Alarm_Btn，是新模式（分段）
 
@@ -309,7 +309,7 @@ namespace Slac_DataAnalysis.FormPage
                 }
                 else
                 {
-                    LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"获取界面日期、班次失败：{lastAnalyseTime_Alarm_Btn}");
+                    LogConfig.Intence.WriteLog("ErrLog\\Alarm_Btn", "Alarm_Btn", $"获取界面日期、班次失败：{lastAnalyseTime_Btn}");
                 }
 
 
@@ -417,7 +417,7 @@ namespace Slac_DataAnalysis.FormPage
                                     // 遍历最新的五十条报警数据，如果存在一条报警时间小于上次分析时间+30分钟，则不执行分析
                                     foreach (var item in Eventtime)
                                     {
-                                        if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                        if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Btn, out lastTime))
                                         {
                                             if (lastTime.AddMinutes(31) > newDbTime)
                                             {
@@ -706,7 +706,7 @@ namespace Slac_DataAnalysis.FormPage
                                     {
                                         foreach (var item in Eventtime)
                                         {
-                                            if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Alarm_Btn, out lastTime))
+                                            if (DateTime.TryParse(item.Trim(), out newDbTime) && DateTime.TryParse(lastAnalyseTime_Btn, out lastTime))
                                             {
                                                 if (lastTime.AddMinutes(31) > newDbTime)
                                                 {
@@ -724,7 +724,7 @@ namespace Slac_DataAnalysis.FormPage
                                         string newlastAnalyseTime_Alarm_Btn = endTime;
                                         DBOper.Init();
                                         DBOper db = new DBOper();
-                                        int result = db.UpdateLastAnalyseTime(newlastAnalyseTime_Alarm_Btn, "lastAnalyseTime_Alarm_Btn");
+                                        int result = db.UpdateLastAnalyseTime(newlastAnalyseTime_Alarm_Btn, "lastAnalyseTime_Btn");
                                         if (result == 1)
                                         {
                                             DateTime.UtcNow.ToString();
@@ -733,8 +733,8 @@ namespace Slac_DataAnalysis.FormPage
 
                                             // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime_Alarm_Btn
                                             DBSystemConfig dbSystemConfig = new DBSystemConfig();
-                                            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime_Alarm_Btn'");
-                                            lastAnalyseTime_Alarm_Btn = list[0].Value;
+                                            List<DBSystemConfig> list = db.QueryListCondition(dbSystemConfig, "Name = 'lastAnalyseTime_Btn'");
+                                            lastAnalyseTime_Btn = list[0].Value;
                                         }
                                         else
                                         {

@@ -672,10 +672,12 @@ namespace Slac_DataAnalysis.FormPage
                                     // 更新redis里面存储的值，即存储变化值
                                     client.Set($"k{deviceID}.{msgID}.{j}", $"{listNowValueInt[j]}@{strBit[0]}");
 
+                                    double diffv = (Convert.ToDateTime(strBit[0]) - Convert.ToDateTime(lastStrBit[1])).TotalSeconds;
+
                                     // 构建插入语句（插入_device_state表）
                                     SqlString.Append($"('{workdate}','{workshift}','{lineID}','{deviceID}','{msgID}.{j}','{listNowValueInt[j]}','{lastStrBit[0]}'," +
-                                                             $"'{Math.Round((Convert.ToDateTime(strBit[0]) - Convert.ToDateTime(lastStrBit[1])).TotalSeconds)}'," +
-                                                             $"'{strBit[0]}','{lastStrBit[1]}',now()),");
+                                                     $"'{diffv}'," +
+                                                     $"'{strBit[0]}','{lastStrBit[1]}',now()),");
                                     Lcount++;
                                 }
 

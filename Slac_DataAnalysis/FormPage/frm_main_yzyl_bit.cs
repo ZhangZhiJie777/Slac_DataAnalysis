@@ -844,6 +844,7 @@ namespace Slac_DataAnalysis_Bit
                     }
                     catch (Exception ex)
                     {
+                        isAnalyzing = false;
                         LogConfig.Intence.WriteLog("ErrLog", "Task", $"{ex.ToString()}\r\n");
                         // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + "_error10.log", ex.ToString() + DateTime.Now.ToString() + "\r\n");
                     }
