@@ -358,12 +358,7 @@ namespace Slac_DataAnalysis_Bit
                     {
                         string type = "报警分析";
                         DateTime nowtime = DateTime.Now;
-                        if (nowtime.ToString("ss") == "00" //||
-                                                           //nowtime.ToString("mm:ss") == "16:00" || //nowtime.ToString("mm:ss") == "06:00" || nowtime.ToString("mm:ss") == "16:00" ||
-                                                           //nowtime.ToString("mm:ss") == "31:00"
-                                                           // nowtime.ToString("mm:ss") == "46:00"   // || nowtime.ToString("mm:ss") == "26:00" || nowtime.ToString("mm:ss") == "36:00" ||   nowtime.ToString("mm:ss") == "41:00" ||
-                                                           // nowtime.ToString("mm:ss") == "51:00"  //  || nowtime.ToString("mm:ss") == "46:00" || nowtime.ToString("mm:ss") == "56:00"
-                          )
+                        if ((nowtime.ToString("ss") == "00" && isNewVersion) || nowtime.ToString("mm:ss") == "01:00" || nowtime.ToString("mm:ss") == "31:00")
                         {
                             if (nowtime < Convert.ToDateTime("08:30:00"))
                             {
@@ -397,9 +392,10 @@ namespace Slac_DataAnalysis_Bit
                             // 新版本且不处于分析状态时，判断数据库最新报警信息时间是否大于上次分析时间+30分钟，大于则执行分析
                             if (isNewVersion && !isAnalyzing)
                             {
+                                string nowTime = DateTime.Now.AddHours(-8).Date.ToString("yyyy-MM-dd");
 
                                 // 查询数据库最新报警信息的时间（eventtime）
-                                string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE eventtime >='{DateTime.Now.AddHours(-8).Date}' and msg_id >=50 and msg_id <150 ORDER BY eventtime DESC LIMIT 500 ";
+                                string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE eventtime >='{nowTime}' and msg_id >=50 and msg_id <150 ORDER BY eventtime DESC LIMIT 500 ";
                                 string newEventtime = PostResponse(httpClientTimer, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", sqlString.ToString());
 
                                 List<string> Eventtime = newEventtime.Trim().Split('\n').ToList();
@@ -411,6 +407,7 @@ namespace Slac_DataAnalysis_Bit
 
                                 if (Eventtime.Count == 500)
                                 {
+                                    //LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"222");
                                     // 遍历最新的1000条报警数据，如果存在一条报警时间小于上次分析时间+30分钟，则不执行分析
                                     foreach (var item in Eventtime)
                                     {
@@ -425,6 +422,8 @@ namespace Slac_DataAnalysis_Bit
                                         }
                                     }
                                 }
+
+                                //LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"111：{sqlString}");
 
                                 if (isStartExecl)
                                 {
@@ -556,7 +555,7 @@ namespace Slac_DataAnalysis_Bit
                             else
                             {
                                 try
-                                {                                    
+                                {
                                     InitRedis(); // 开始分析，若为班次开始，初始化将redis存储的值都重置为 0
 
                                     // chizhoujz.line_id + CHtable_name
@@ -565,6 +564,7 @@ namespace Slac_DataAnalysis_Bit
                                           + "' and eventtime<'" + endTime + "' and device_id in(" + device_16bit + ") and msg_id >=50 and msg_id <150 order by device_id ,msg_id ";
 
                                     string msgIDlist = string.Empty;
+                                    string msgIDlist1 = string.Empty;
 
                                     msgIDlist = PostResponse(httpClient16, CHuser, CHpasswd, $"http://{CHserver}:{CHport}/", ssql_12.ToString());
 
@@ -581,7 +581,7 @@ namespace Slac_DataAnalysis_Bit
                                         string deviceid = device_msg_list[0];
                                         string msgid = device_msg_list[1];
 
-                                        if (msgid=="92")
+                                        if (msgid == "92")
                                         {
 
                                         }
@@ -706,8 +706,10 @@ namespace Slac_DataAnalysis_Bit
                                     {
                                         isChangelastAnalyseTime = false;
 
+                                        string nowTime = DateTime.Now.AddHours(-8).Date.ToString("yyyy-MM-dd");
+
                                         // 查询数据库最新报警信息的时间（eventtime）
-                                        string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE eventtime >='{DateTime.Now.AddHours(-8).Date}' and msg_id >=50 and msg_id <150 ORDER BY eventtime DESC LIMIT 500 ";
+                                        string sqlString = $"SELECT eventtime FROM {companyNum}.{line_id}{CHtable_name} WHERE eventtime >='{nowTime}' and msg_id >=50 and msg_id <150 ORDER BY eventtime DESC LIMIT 500 ";
 
                                         string newEventtime = string.Empty;
 
@@ -749,7 +751,8 @@ namespace Slac_DataAnalysis_Bit
                                             if (result == 1)
                                             {
                                                 DateTime.UtcNow.ToString();
-                                                AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n");
+                                                AddListStr($"UTC时间段 {startTime}-{endTime} 内报警分析处理完成！ " + DateTime.Now.ToString() + "\r\n\r\n");
+                                                AddListStr($"——————————————————————————————————————————————\r\n");
                                                 LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm", $"更新上次分析时间戳成功：{newLastAnalyseTime}\r\n");
 
                                                 // 数据库更新后，再更新内存中的时间戳 lastAnalyseTime
@@ -780,7 +783,7 @@ namespace Slac_DataAnalysis_Bit
                                             {
                                                 isStartExec10 = false;
                                                 isAnalyzing = false;
-                                                isInitRedis = true;
+                                                //isInitRedis = true;
                                                 LogConfig.Intence.WriteLog("ErrLog", "Alarm", $"更新上次分析时间戳失败：{newLastAnalyseTime}\r\n");
                                                 AddListStr($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss fff")}  更新上次分析时间戳失败，请检查数据库配置！");
                                             }
@@ -844,14 +847,21 @@ namespace Slac_DataAnalysis_Bit
                             catch (Exception ex)
                             {
                                 isAnalyzing = false;
-                                isInitRedis = true;
+                                if (!isNewVersion)
+                                {
+                                    isInitRedis = true;
+                                }
                                 LogConfig.Intence.WriteLog("ErrLog", "Alarm", $"分析{startTime}~{endTime}时间段内数据，存在异常：{ex.Message}");
                             }
                         }
                         else
                         {
                             isAnalyzing = false;
-                            isInitRedis = true; // 一个时间段结束，若需要重新分析，则重置该时间段的 Redis 键值
+                            // 分段模式下，不需要重置Redis，每次都是重新获取上一个时间段最后一次分析存储的值
+                            if (!isNewVersion)
+                            {
+                                isInitRedis = true; // 一个时间段结束，若需要重新分析，则重置该时间段的 Redis 键值
+                            }
 
                             LogConfig.Intence.WriteLog("ErrLog", "Alarm", $"分析{startTime}~{endTime}时间段内数据，分析时存在报错，需要重新分析");
                         }
@@ -933,7 +943,7 @@ namespace Slac_DataAnalysis_Bit
                     {
                         int xm = 31 - j;
 
-                        string lastKeyValue = client.Get<string>("k" + deviceID + "." + msgID + "." + xm.ToString());
+                        string lastKeyValue = client.Get<string>("k" + lineID + "." + deviceID + "." + msgID + "." + xm.ToString());
 
                         if (sTime.Equals("00:00:00") || sTime.Equals("12:00:00")) // 每个班次开始时，将redis存储的值都重置为 0
                         {
@@ -960,7 +970,7 @@ namespace Slac_DataAnalysis_Bit
                             if (timeJudge)
                             {
                                 listLastKeyValue[j] = lastKeyValue.Split('@')[0];
-                                client.Set("k" + deviceID + "." + msgID + "." + xm.ToString(), lastKeyValue);
+                                client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xm.ToString(), lastKeyValue);
                                 LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID}.{xm} Redis初始化值为：{lastKeyValue}");
                             }
                             else
@@ -971,15 +981,15 @@ namespace Slac_DataAnalysis_Bit
 
                                 if (dt.Hour < 12)
                                 {
-                                    string aa = result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss");
-                                    client.Set("k" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-                                    client.Set("lastTime" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                                    client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                                    client.Set("lastTime" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff"));
                                 }
                                 else
                                 {
-                                    string bb = result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss");
-                                    client.Set("k" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss"));
-                                    client.Set("lastTime" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss"));
+
+                                    client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                                    client.Set("lastTime" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff"));
                                 }
                             }
                         }
@@ -987,19 +997,19 @@ namespace Slac_DataAnalysis_Bit
                         {
                             listLastKeyValue[j] = "0";
 
-                            int result = (initValue >> xm) & 1;                            
+                            int result = (initValue >> xm) & 1;
 
                             if (dt.Hour < 12)
                             {
-                                string aa = result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss");
-                                client.Set("k" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-                                client.Set("lastTime" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                                client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                                client.Set("lastTime" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff"));
                             }
                             else
                             {
-                                string bb = result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss");
-                                client.Set("k" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss"));
-                                client.Set("lastTime" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss"));
+
+                                client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                                client.Set("lastTime" + deviceID + "." + msgID + "." + xm.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff"));
                             }
                         }
                     }
@@ -1080,7 +1090,7 @@ namespace Slac_DataAnalysis_Bit
                                     int xn = 31 - j;
                                     int result = (nowValue >> xn) & 1; // 按位与操作（即判断nowValue右移后，最低位结果是否为1，为1则result为1，否则为0）
 
-                                    string lastKeyValue = client.Get<string>("k" + deviceID + "." + msgID + "." + xn.ToString());
+                                    string lastKeyValue = client.Get<string>("k" + lineID + "." + deviceID + "." + msgID + "." + xn.ToString());
 
                                     string[] lastStrBit = lastKeyValue.Split('@');
 
@@ -1088,7 +1098,7 @@ namespace Slac_DataAnalysis_Bit
 
                                     if (lastStrBit[0] != result.ToString())
                                     {
-                                        client.Set("k" + deviceID + "." + msgID + "." + xn.ToString(), result.ToString() + "@" + strBit[0]);
+                                        client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xn.ToString(), result.ToString() + "@" + strBit[0]);
 
                                         // 如果这次触发分析后更新时间段，表示这次触发是当前时间段的最后一次分析，更新Redis,作为下一个时间段的上一次值
                                         if (isChangelastAnalyseTime)
@@ -1110,7 +1120,7 @@ namespace Slac_DataAnalysis_Bit
                                         SqlString.Append($"('{workdate}','{workshift}','{lineID}','{deviceID}','{msgID}.{xn.ToString()}','{result}','{lastStrBit[0]}'," +
                                                          $"'{diffv}'," +
                                                          $"'{strBit[0]}','{lastStrBit[1]}',now()),");
-                                        
+
                                         Lcount++;
                                     }
                                 }
@@ -1228,7 +1238,7 @@ namespace Slac_DataAnalysis_Bit
                     {
                         int xx = 31 - j;
 
-                        string lastKeyValue = client.Get<string>("k" + deviceID + "." + msgID + "." + xx.ToString());
+                        string lastKeyValue = client.Get<string>("k" + lineID + "." + deviceID + "." + msgID + "." + xx.ToString());
 
                         if (sTime.Equals("00:00:00") || sTime.Equals("12:00:00")) // 每个班次开始时，将redis存储的值都重置为 0
                         {
@@ -1253,7 +1263,7 @@ namespace Slac_DataAnalysis_Bit
                             if (timeJudge)
                             {
                                 listLastKeyValue[j - 16] = lastKeyValue.Split('@')[0];
-                                client.Set("k" + deviceID + "." + msgID + "." + xx.ToString(), lastKeyValue);
+                                client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xx.ToString(), lastKeyValue);
                                 //LogConfig.Intence.WriteLog("RunLog\\Alarm", "Alarm_Redis", $"在{startTime}~{endTime}时间段内，deviceID：{deviceID},msgID：{msgID}.{xx} Redis初始化值为：{lastKeyValue}");
                             }
                             else
@@ -1264,15 +1274,15 @@ namespace Slac_DataAnalysis_Bit
 
                                 if (dt.Hour < 12)
                                 {
-                                    string aa = result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss");
-                                    client.Set("k" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-                                    client.Set("lastTime" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                                    client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                                    client.Set("lastTime" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff"));
                                 }
                                 else
                                 {
-                                    string bb = result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss");
-                                    client.Set("k" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss"));
-                                    client.Set("lastTime" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss"));
+
+                                    client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                                    client.Set("lastTime" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff"));
                                 }
                             }
                         }
@@ -1284,18 +1294,18 @@ namespace Slac_DataAnalysis_Bit
 
                             if (dt.Hour < 12)
                             {
-                                string aa = result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss");
-                                client.Set("k" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-                                client.Set("lastTime" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                                client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                                client.Set("lastTime" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff"));
                             }
                             else
                             {
-                                string bb = result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss");
-                                client.Set("k" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss"));
-                                client.Set("lastTime" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss"));
+
+                                client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                                client.Set("lastTime" + deviceID + "." + msgID + "." + xx.ToString(), result.ToString() + "@" + dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff"));
                             }
-                                                        
-                        }                                                
+
+                        }
                     }
 
                     initValue = Convert.ToInt32(string.Join("", listLastKeyValue), 2);
@@ -1360,12 +1370,12 @@ namespace Slac_DataAnalysis_Bit
                                     int result = (nowValue >> xy) & 1; // 右移 xy 位 ，再和 1 按位与运算（位都为 1 才是1，否则为0）获取最低位的值
 
                                     /// 再更新 Redis里面的对应键的值，并拼接到更新MySql数据库的 Sql语句中                                   
-                                    string lastKeyValue = client.Get<string>("k" + deviceID + "." + msgID + "." + xy.ToString());
+                                    string lastKeyValue = client.Get<string>("k" + lineID + "." + deviceID + "." + msgID + "." + xy.ToString());
 
                                     string[] lastStrBit = lastKeyValue.Split('@');
                                     if (lastStrBit[0] != result.ToString())
                                     {
-                                        client.Set("k" + deviceID + "." + msgID + "." + xy.ToString(), result.ToString() + "@" + strBit[0]);
+                                        client.Set("k" + lineID + "." + deviceID + "." + msgID + "." + xy.ToString(), result.ToString() + "@" + strBit[0]);
 
                                         // 如果这次触发分析后更新时间段，表示这次触发是当前时间段的最后一次分析，更新Redis,作为下一个时间段的上一次值
                                         if (isChangelastAnalyseTime)
@@ -1427,7 +1437,7 @@ namespace Slac_DataAnalysis_Bit
                     // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + ".log", workdate + " & " + workshift + " & " + deviceID + "." + msgID + "报警信息处理完成！" + " @ " + DateTime.Now.ToString() + "\r\n");
                 }
 
-                AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 报警信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
+                // AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 报警信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
 
             }
             catch (ThreadAbortException) // 线程中止异常
@@ -1468,7 +1478,7 @@ namespace Slac_DataAnalysis_Bit
                     // 暂时有这么多设备，设备号为10-21
                     for (int i = 10; i < 22; i++)
                     {
-                        string prefix = $"k{i}.";
+                        string prefix = $"k{line_id}.{i}.";
                         string lastPrefix = $"lastTime{i}.";
                         List<string> matchingKeys = new List<string>();
 
@@ -1482,17 +1492,17 @@ namespace Slac_DataAnalysis_Bit
                         {
                             if (dt.Hour < 12)
                             {
-                                client.Set(key, $"0@{dt.Date.ToString("yyyy-MM-dd HH:mm:ss")}");
+                                client.Set(key, $"0@{dt.Date.ToString("yyyy-MM-dd HH:mm:ss.fff")}");
                             }
                             else
                             {
-                                client.Set(key, $"0@{dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss")}");
+                                client.Set(key, $"0@{dt.Date.AddHours(12).ToString("yyyy-MM-dd HH:mm:ss.fff")}");
                             }
                         }
                     }
                 }
 
-                
+
 
             }
             catch (Exception)

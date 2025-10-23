@@ -891,8 +891,8 @@ namespace Slac_DataAnalysis
             try
             {
                 // 前后各延长一分钟，处理跨班的设备状态
-                string startTimeSubtractOneMinute = Convert.ToDateTime(startTime).AddMinutes(-1).ToString();
-                string endTimeAddOneMinute = Convert.ToDateTime(endTime).AddMinutes(1).ToString();
+                string startTimeSubtractOneMinute = Convert.ToDateTime(startTime).AddMinutes(-1).ToString("yyyy-MM-dd HH:mm:ss");
+                string endTimeAddOneMinute = Convert.ToDateTime(endTime).AddMinutes(1).ToString("yyyy-MM-dd HH:mm:ss");
 
                 string sqlhead = "insert into " + lineID + "_state (workdate,workshift,line_id,device_id,msg_id,state_label,pv,lpv,diffv,pt,lpt,indate) values ";
                 SqlString = new StringBuilder(sqlhead);
@@ -910,10 +910,14 @@ namespace Slac_DataAnalysis
                               $"AND device_id = {fromdeviceID} AND msg_id = {msgID} " +
                               $"ORDER BY eventtime";
 
+                //LogConfig.Intence.WriteLog("RunLog\\S", "S", $"222：{ssql}");
+
                 byte[] postData = Encoding.ASCII.GetBytes(ssql.ToString());
                 string strResult = PostResponse(CHuser, CHpasswd, $"http://{CHserver}:8123/", ssql.ToString());
                 if (strResult != "")
                 {
+                    //LogConfig.Intence.WriteLog("RunLog\\S", "S", $"111");
+
                     strResult = strResult.Remove(strResult.Count() - 1, 1);
                     string[] strArray = strResult.Split('\n');
 
@@ -985,6 +989,11 @@ namespace Slac_DataAnalysis
                     // 遍历所有数据，计算每个状态持续时间
                     for (int i = 1; i < strArray.Count(); i++)
                     {
+                        //if (deviceID == "14")
+                        //{
+                        //    LogConfig.Intence.WriteLog("RunLog\\S", "S", $"总数据量：{strArray.Count()}、 eventtime：{strArray[0]}、运行：{strArray[1]}、停机：{strArray[2]}、待机：{strArray[3]}\r\n\r\n");
+                        //}
+
                         if (cts.Token.IsCancellationRequested)
                         {
                             break;
@@ -1461,7 +1470,7 @@ namespace Slac_DataAnalysis
             {
                 AddListStr("正在处理中，请稍后！ " + DateTime.Now.ToString());
             }
-                
+
 
         }
 
