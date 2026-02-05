@@ -159,7 +159,7 @@ namespace Slac_DataAnalysis
 
             if (isCluster == "1")
             {
-                CHpasswd = "slac1028#";
+                CHpasswd = "slac.1028";
                 CHtable_name = "_all"; ////分布式表加all
             }
 
@@ -898,7 +898,12 @@ namespace Slac_DataAnalysis
                 SqlString = new StringBuilder(sqlhead);
                 int Lcount = 0;
 
-                string ssqlDel = "delete from " + lineID + "_state where workdate='" + workdate + "' and workshift='" + workshift + "'  and device_id='" + deviceID + "'";
+                string ssqlDel = $"DELETE FROM {lineID}_state " +
+                                 $"WHERE workdate = '{workdate}' " +   // date → 必须加引号
+                                 $"AND workshift = {workshift} " +     // int → 不能加引号
+                                 $"AND device_id = {deviceID}";        // int → 不能加引号
+
+                //string ssqlDel = "delete from " + lineID + "_state where workdate='" + workdate + "' and workshift=" + workshift + " and device_id='" + deviceID + "'";
                 int execCount = ConfigHelper.ExecuteNonQuery(Conn_battery, CommandType.Text, ssqlDel);
 
                 string ssql = $"SELECT eventtime," +

@@ -203,7 +203,7 @@ namespace Slac_DataAnalysis.FormPage
                 //client.Db = 2; //选择第1个数据库，0-15
                 if (isCluster == "1")
                 {
-                    CHpasswd = "slac1028#";
+                    CHpasswd = "slac.1028";
                     CHtable_name = "_all"; ////分布式表加all
                 }
 

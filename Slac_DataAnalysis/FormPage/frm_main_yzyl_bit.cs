@@ -219,7 +219,7 @@ namespace Slac_DataAnalysis_Bit
                 //client.Db = 2; //选择第1个数据库，0-15
                 if (isCluster == "1")
                 {
-                    CHpasswd = "slac1028#";
+                    CHpasswd = "slac.1028";
                     CHtable_name = "_all"; ////分布式表加all
                 }
 
@@ -772,7 +772,7 @@ namespace Slac_DataAnalysis_Bit
                                                         {
                                                             isChangelastAnalyseTime = false;
                                                             break;
-                                                            // 注意这里不能 break，因为要检查所有数据
+                                                            
                                                         }
                                                         else { isChangelastAnalyseTime = true; }
                                                     }
@@ -1437,7 +1437,7 @@ namespace Slac_DataAnalysis_Bit
                     // System.IO.File.AppendAllText(".\\" + DateTime.Now.ToString("yyyyMMdd") + ".log", workdate + " & " + workshift + " & " + deviceID + "." + msgID + "报警信息处理完成！" + " @ " + DateTime.Now.ToString() + "\r\n");
                 }
 
-                // AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 报警信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
+                //AddListStr(workdate + " & " + workshift + " & " + deviceID + "." + msgID + " 报警信息处理完成！" + " @ " + DateTime.Now.ToString() + " 耗时： " + watch.ElapsedMilliseconds.ToString());
 
             }
             catch (ThreadAbortException) // 线程中止异常
